@@ -4,9 +4,9 @@
 <meta name="theme-color" content="#121820">
 <meta name="description" content="MinePlan — a block-by-block planner for Minecraft builds.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='10' fill='%23171d25'/%3E%3Crect x='10' y='34' width='44' height='8' fill='%23b88752'/%3E%3Crect x='10' y='42' width='44' height='8' fill='%238a6340'/%3E%3Crect x='22' y='14' width='20' height='20' fill='%2377c45a'/%3E%3Crect x='26' y='18' width='12' height='12' fill='%2365a84a'/%3E%3C/svg%3E">
-<title>MinePlan V3.9</title>
+<title>MinePlan V3.16</title>
 <!-- ===== bump this ONE line when you upload a new version ===== -->
-<meta name="mineplan-build" content="2026-09-17.4">
+<meta name="mineplan-build" content="2026-09-17.11">
 <style>
 :root{--bg:#0d1117;--p:#171d25;--p2:#202833;--line:#344050;--txt:#edf3f8;--mut:#9aa8b7;--green:#65a84a;--acc:#77c45a}
 *{box-sizing:border-box}
@@ -104,7 +104,7 @@ textarea#cmds{width:100%;height:46vh;font:11.5px ui-monospace,Consolas,monospace
 @media (max-width:640px){.app{grid-template-columns:var(--lw,190px) 6px minmax(0,1fr);--lw:190px}.right,.resizer[data-side=r]{display:none}}
 </style></head><body>
 <header>
-<div class="logo" id="logo" title="">⛏ Mine<b>Plan V3.9</b></div>
+<div class="logo" id="logo" title="">⛏ Mine<b>Plan V3.16</b></div>
 <input id="name" value="My Minecraft Build" aria-label="Project name">
 <button id="projects" title="Open the project library">Projects</button>
 <button id="save" class="primary" title="Save to a file (Ctrl+S)">Save</button>
@@ -141,14 +141,15 @@ textarea#cmds{width:100%;height:46vh;font:11.5px ui-monospace,Consolas,monospace
   <button class="tool" data-t="select">□ Copy<i>8</i></button>
   <button class="tool" data-t="window">▥ Window<i>9</i></button>
   <button class="tool" data-t="move">✥ Move<i>0</i></button>
-  <button class="tool" data-t="height">⇕ Height<i>H</i></button>
+  <button class="tool" data-t="height" title="Left-click raises a block, right-click lowers it">⇕ Height<i>H</i></button>
+  <button class="tool" data-t="lift" title="Left-click lifts a block off the ground, right-click drops it">⇡ Lift<i>L</i></button>
   <button class="tool" data-t="redstone">⚡ Redstone<i>R</i></button>
  </div>
- <p class="small" style="margin:8px 0 0"><b>Right-click</b> an object to rotate it, or empty space to turn the next one. <kbd>Esc</kbd> cancels. <kbd>Alt</kbd>+click picks up whatever is under the cursor.</p></div>
+ <p class="small" style="margin:8px 0 0"><b>Left/right-click</b> raise and lower: thickness with <b>Block</b> or <b>Height</b>, elevation with <b>Lift</b>. Drag to do a run. <kbd>Shift</kbd>+right-click rotates an object instead. <kbd>Esc</kbd> cancels, <kbd>Alt</kbd>+click picks up whatever is under the cursor.</p></div>
 
  <div class="sec"><h3>Block height <span class="hint">makes the 3D real</span></h3>
   <div class="row"><input id="curH" type="range" min="1" max="12" value="1"><b id="curHv" class="fixed" style="width:54px;text-align:right">1 tall</b></div>
-  <p class="small">New blocks are placed this tall. The <b>Height</b> tool paints this value onto blocks you already placed (shift+click to lower).</p>
+  <p class="small">New blocks are placed this tall.<br><b>Left-click raises</b> a block by one, <b>right-click lowers</b> it — with the <b>Block</b> tool as well as the <b>Height</b> tool. With Block, the first click places and clicking again stacks. Drag to do a whole run. <kbd>Shift</kbd>+left-click (Height tool) sets a block straight to the slider value.</p>
   <label class="inline"><input type="checkbox" id="showH" checked> Show height numbers on the grid</label>
  </div>
 
@@ -213,7 +214,9 @@ textarea#cmds{width:100%;height:46vh;font:11.5px ui-monospace,Consolas,monospace
  <div class="sec"><h3>Shortcuts</h3><div class="small">
   <kbd>Ctrl</kbd>+<kbd>Z</kbd> undo · <kbd>Ctrl</kbd>+<kbd>Y</kbd> redo · <kbd>Ctrl</kbd>+<kbd>S</kbd> save<br>
   <kbd>Ctrl</kbd>+wheel zoom · <kbd>1</kbd>–<kbd>0</kbd> tools · <kbd>[</kbd> <kbd>]</kbd> floor<br>
-  <kbd>Esc</kbd> cancel · right-click rotate · <kbd>Alt</kbd>+click eyedropper</div></div>
+  <kbd>Esc</kbd> cancel · <kbd>Alt</kbd>+click eyedropper<br>
+  right-click lowers · <kbd>Shift</kbd>+right-click rotates<br>
+  <kbd>L</kbd> lift blocks off the ground (balconies, arches)</div></div>
 </aside></div>
 
 <dialog id="projectDialog"><h2>Project Library</h2><div id="projectList" class="projects"></div>
@@ -221,7 +224,7 @@ textarea#cmds{width:100%;height:46vh;font:11.5px ui-monospace,Consolas,monospace
 
 <dialog id="previewDialog" style="width:min(940px,94vw)"><h2>Isometric Build Preview</h2>
  <canvas id="iso" width="880" height="560" style="width:100%;background:#10161d;border:1px solid #435166;border-radius:6px"></canvas>
- <div class="row" style="margin-top:10px"><button id="isoRot">↻ Rotate view</button><button id="isoPng">Save as PNG</button><label class="inline fixed" style="flex:none"><input type="checkbox" id="isoTex" checked> Textured blocks</label><span class="spacer"></span><button id="closePreview">Close</button></div>
+ <div class="row" style="margin-top:10px"><button id="isoRot">↻ Rotate view</button><button id="isoPng">Save as PNG</button><label class="inline fixed" style="flex:none"><input type="checkbox" id="isoTex" checked> Textured blocks</label><label class="inline fixed" style="flex:none">Floor <select id="isoFloorSel" style="width:auto"></select></label><label class="inline fixed" style="flex:none"><input type="checkbox" id="isoSpread"> Spread floors apart</label><span class="spacer"></span><button id="closePreview">Close</button></div>
  <p class="small">Built from the block heights you set. Blocks with a height of 1 are floors; taller ones become walls and towers.</p></dialog>
 
 <dialog id="shopDialog" style="width:min(560px,94vw)"><h2>Shopping List</h2>
@@ -264,7 +267,7 @@ textarea#cmds{width:100%;height:46vh;font:11.5px ui-monospace,Consolas,monospace
 <div id="hoverTip"></div>
 <script>
 "use strict";
-const VERSION="3.9";
+const VERSION="3.16";
 const BUILD=document.querySelector('meta[name="mineplan-build"]')?.content||"dev";
 /* ---------- material table ---------- */
 const C=[
@@ -299,7 +302,7 @@ C.push(
  ["Honeycomb Block","#e0932c","decor"],["Bone Block","#ddd9c6","natural"],["Hay Block","#c8a01c","natural"],
  ["Pumpkin","#c07617","natural"],["Jack o Lantern","#d08b22","light"],["Melon","#7a9a2e","natural"],
  ["Sea Pickle","#5c6f36","light"],["Cake","#e4ddd6","furniture"],["Bamboo Mosaic","#c5b65c","wood"],
- ["Mud Brick Stairs","#8a6952","stairs"],["Cut Copper Stairs","#b66c4e","stairs"],["Sandstone Stairs","#d7c28a","stairs"]
+ ["Large Chest","#a66a21","furniture"],["Mud Brick Stairs","#8a6952","stairs"],["Cut Copper Stairs","#b66c4e","stairs"],["Sandstone Stairs","#d7c28a","stairs"]
 );
 
 /* ---------- redstone parts (separate overlay layer) ---------- */
@@ -414,7 +417,8 @@ let W=40,H=30,cell=22,zoom=1,tool="pencil",sel=0,rot=0,fi=0,rsSel=0;
 let drag=null,dragTo=null,clip=null,stamp=null,moveObj=null;
 let undoStack=[],future=[],pending=null;
 let blueprint=false,sym="none",curH=1,gidSeq=1;
-let hoverTimer=null,hoverKey="",hoverCell=null,lastPaint=null;
+let hoverTimer=null,hoverKey="",hoverCell=null,lastPaint=null,strokeCells=null,strokeMode="paint";
+let downAt=null,dragMoved=false;   // a click only becomes a drag past a few pixels
 let buildMode=false,buildSteps=[],buildAt=0,isoDir=0;
 let projectId=null,fileHandle=null,dirty=false,labelsDirty=true,catFilter="";
 
@@ -423,7 +427,7 @@ const canvas=$("#grid"),ctx=canvas.getContext("2d",{alpha:false});
 const CATS=[...new Set(C.map(c=>c[2]))];
 
 function g2(v){return Array.from({length:H},()=>Array(W).fill(v))}
-function blank(name){return{name:name||"Floor 1",cells:g2(null),hts:g2(1),rs:g2(null),objs:[],labels:[]}}
+function blank(name){return{name:name||"Floor 1",cells:g2(null),hts:g2(1),base:g2(0),rs:g2(null),objs:[],labels:[]}}
 let F=[blank()];
 
 const clamp=(v,a,b)=>v<a?a:v>b?b:v;
@@ -1291,7 +1295,7 @@ const SPRITE_RULES=[
 
 /* names that should borrow another sprite ("@X" = a template) */
 const SPRITE_ALIAS={
- "Trapped Chest":"Chest","Ender Chest":"Chest",
+ "Trapped Chest":"Chest","Ender Chest":"Chest","Large Chest":"Chest",
  "Chiseled Bookshelf":"Bookshelf","Blast Furnace":"Furnace",
  "Sea Lantern":"@Glow","Jack o Lantern":"@Glow","Glowstone":"@Glow","Shroomlight":"@Glow",
  "Froglight":"@Glow","Redstone Lamp":"@Glow","Sea Pickle":"@Glow","Magma Block":"@Glow",
@@ -1319,6 +1323,381 @@ function objSprite(i,foot){
   rows.forEach((r,y)=>[...r].forEach((ch,x)=>{const col=pal[ch];if(!col)return;g.fillStyle=col;g.fillRect(x,y,1,1)}));
  }
  spriteCache.set(key,cv);return cv;
+}
+/* Redstone parts get the same 16x16 treatment. "1/2/3" = the part's own colour,
+ a shade and a highlight, so Rail/Powered Rail etc. share one design. */
+const RS_SPRITES={
+"Dispenser":[
+"KKKKKKKKKKKKKKKK",
+"KssssssssssssssK",
+"KsSSSSSSSSSSSSsK",
+"KsSddddddddddSsK",
+"KsSdddkkkkdddSsK",
+"KsSddkKKKKkddSsK",
+"KsSdkKKKKKKkdSsK",
+"KsSdkKKXXKKkdSsK",
+"KsSdkKKXXKKkdSsK",
+"KsSdkKKKKKKkdSsK",
+"KsSddkKKKKkddSsK",
+"KsSdddkkkkdddSsK",
+"KsSSSSSSSSSSSSsK",
+"KssssssssssssssK",
+"KssssssssssssssK",
+"KKKKKKKKKKKKKKKK"],
+
+"Redstone Lamp":[
+"KKKKKKKKKKKKKKKK",
+"KmmmmmmmmmmmmmmK",
+"KmoooooooooooomK",
+"KmoFFFFFFFFFFomK",
+"KmoFYYYYYYYYFomK",
+"KmoFYgggggggFomK",
+"KmoFYgFFFFgYFomK",
+"KmoFYgFXXFgYFomK",
+"KmoFYgFXXFgYFomK",
+"KmoFYgFFFFgYFomK",
+"KmoFYgggggggFomK",
+"KmoFYYYYYYYYFomK",
+"KmoFFFFFFFFFFomK",
+"KmoooooooooooomK",
+"KmmmmmmmmmmmmmmK",
+"KKKKKKKKKKKKKKKK"],
+
+"Redstone Dust":[
+".......RR.......",
+".......RR.......",
+".......RR.......",
+".......RR.......",
+".......RR.......",
+".......RR.......",
+".......RR.......",
+"RRRRRRRrrRRRRRRR",
+"RRRRRRRrrRRRRRRR",
+".......RR.......",
+".......RR.......",
+".......RR.......",
+".......RR.......",
+".......RR.......",
+".......RR.......",
+".......RR......."],
+
+"Redstone Torch":[
+"................",
+"................",
+"......kkkk......",
+".....kRRRRk.....",
+"....kRzzzzRk....",
+"....kRzXXzRk....",
+"...kkRzXXzRkk...",
+"...kRRzzzzRRk...",
+"...kRRzzzzRRk...",
+"...kkRRRRRRkk...",
+"....kkmmmmkk....",
+".....kmmmmk.....",
+".....kmmmmk.....",
+"......kmmk......",
+"......kkkk......",
+"................"],
+
+"Repeater":[
+"KKKKKKKKKKKKKKKK",
+"KSSSSSSSSSSSSSSK",
+"KSssssssssssssSK",
+"KSsddddddddddsSK",
+"KSsdkkRRRRkkdsSK",
+"KSsdkRRXXRRkdsSK",
+"KSsdkRRXXRRkdsSK",
+"KSsdkkRRRRkkdsSK",
+"KSsddddddddddsSK",
+"KSsdkkkkkkkkdsSK",
+"KSsdkRRRRRRkdsSK",
+"KSsdkRRXXRRkdsSK",
+"KSsdkkRRRRkkdsSK",
+"KSsddddddddddsSK",
+"KSSSSSSSSSSSSSSK",
+"KKKKKKKKKKKKKKKK"],
+
+"Comparator":[
+"KKKKKKKKKKKKKKKK",
+"KSSSSSSSSSSSSSSK",
+"KSssssssssssssSK",
+"KSsddddddddddsSK",
+"KSsdkRRkkRRkdsSK",
+"KSsdRRXXXXRRdsSK",
+"KSsdkRRkkRRkdsSK",
+"KSsddddddddddsSK",
+"KSsddddddddddsSK",
+"KSsdddkRRkdddsSK",
+"KSsddRRXXRRddsSK",
+"KSsdddkRRkdddsSK",
+"KSsddddddddddsSK",
+"KSssssssssssssSK",
+"KSSSSSSSSSSSSSSK",
+"KKKKKKKKKKKKKKKK"],
+
+"Observer":[
+"KKKKKKKKKKKKKKKK",
+"KddddddddddddddK",
+"KdssssssssssssdK",
+"KdsddddddddddsdK",
+"KdsdXXXddXXXdsdK",
+"KdsdXkXddXkXdsdK",
+"KdsdXXXddXXXdsdK",
+"KdsddddddddddsdK",
+"KdsddddddddddsdK",
+"KdsdRRRRRRRRdsdK",
+"KdsdRkkkkkkRdsdK",
+"KdsdRRRRRRRRdsdK",
+"KdsddddddddddsdK",
+"KdssssssssssssdK",
+"KddddddddddddddK",
+"KKKKKKKKKKKKKKKK"],
+
+"Piston":[
+"KKKKKKKKKKKKKKKK",
+"KiiiiiiiiiiiiiiK",
+"KiIIIIIIIIIIIIiK",
+"KiIWWWWWWWWWWIiK",
+"KiIWmmmmmmmmWIiK",
+"KiIWmWWWWWWmWIiK",
+"KiIWmWmmmmWmWIiK",
+"KiIWmWmWWmWmWIiK",
+"KiIWmWmWWmWmWIiK",
+"KiIWmWmmmmWmWIiK",
+"KiIWmWWWWWWmWIiK",
+"KiIWmmmmmmmmWIiK",
+"KiIWWWWWWWWWWIiK",
+"KiIIIIIIIIIIIIiK",
+"KiiiiiiiiiiiiiiK",
+"KKKKKKKKKKKKKKKK"],
+
+"Sticky Piston":[
+"KKKKKKKKKKKKKKKK",
+"KiiiiiiiiiiiiiiK",
+"KiIIIIIIIIIIIIiK",
+"KiIeeeeeeeeeeIiK",
+"KiIeGGGGGGGGeIiK",
+"KiIeGeeeeeeGeIiK",
+"KiIeGeGGGGeGeIiK",
+"KiIeGeGeeGeGeIiK",
+"KiIeGeGeeGeGeIiK",
+"KiIeGeGGGGeGeIiK",
+"KiIeGeeeeeeGeIiK",
+"KiIeGGGGGGGGeIiK",
+"KiIeeeeeeeeeeIiK",
+"KiIIIIIIIIIIIIiK",
+"KiiiiiiiiiiiiiiK",
+"KKKKKKKKKKKKKKKK"],
+
+"Lever":[
+"................",
+"................",
+"...KKKKKKKKKK...",
+"...KssssssssK...",
+"...KsSSSSSSsK...",
+"...KsSddddSsK...",
+"...KsSdmmdSsK...",
+"...KsSdmmdSsK...",
+"...KsSdmmdSsK...",
+"...KsSddddSsK...",
+"...KsSSSSSSsK...",
+"...KssssssssK...",
+"...KKKKKKKKKK...",
+"................",
+"................",
+"................"],
+
+"Stone Button":[
+"................",
+"................",
+"................",
+"....KKKKKKKK....",
+"...KssssssssK...",
+"...KsSSSSSSsK...",
+"...KsSSSSSSsK...",
+"...KsSSSSSSsK...",
+"...KsSSSSSSsK...",
+"...KsSSSSSSsK...",
+"...KssssssssK...",
+"....KKKKKKKK....",
+"................",
+"................",
+"................",
+"................"],
+
+"Pressure Plate":[
+"................",
+".KKKKKKKKKKKKKK.",
+".KSSSSSSSSSSSSK.",
+".KSssssssssssSK.",
+".KSssssssssssSK.",
+".KSssssssssssSK.",
+".KSssssssssssSK.",
+".KSssssssssssSK.",
+".KSssssssssssSK.",
+".KSssssssssssSK.",
+".KSssssssssssSK.",
+".KSssssssssssSK.",
+".KSssssssssssSK.",
+".KSSSSSSSSSSSSK.",
+".KKKKKKKKKKKKKK.",
+"................"],
+
+"Tripwire Hook":[
+"................",
+"................",
+"......KKKK......",
+".....KmmmmK.....",
+".....KmWWmK.....",
+".....KmWWmK.....",
+"....KKmWWmKK....",
+"....KiimmiiK....",
+"....KiIIIIiK....",
+".....KiIIiK.....",
+"......KiiK......",
+".......KK.......",
+"................",
+"................",
+"................",
+"................"],
+
+"Dropper":[
+"KKKKKKKKKKKKKKKK",
+"KssssssssssssssK",
+"KsSSSSSSSSSSSSsK",
+"KsSddddddddddSsK",
+"KsSddddddddddSsK",
+"KsSddkkkkkkddSsK",
+"KsSddkKKKKkddSsK",
+"KsSddkKKKKkddSsK",
+"KsSddkKKKKkddSsK",
+"KsSddkkkkkkddSsK",
+"KsSddddddddddSsK",
+"KsSddddddddddSsK",
+"KsSSSSSSSSSSSSsK",
+"KssssssssssssssK",
+"KssssssssssssssK",
+"KKKKKKKKKKKKKKKK"],
+
+"Target":[
+"KKKKKKKKKKKKKKKK",
+"KXXXXXXXXXXXXXXK",
+"KXXXXXXXXXXXXXXK",
+"KXXzzzzzzzzzzXXK",
+"KXzzzzzzzzzzzzXK",
+"KXzzzXXXXXXzzzXK",
+"KXzzXXzzzzXXzzXK",
+"KXzzXzzzzzzXzzXK",
+"KXzzXzzzzzzXzzXK",
+"KXzzXXzzzzXXzzXK",
+"KXzzzXXXXXXzzzXK",
+"KXzzzzzzzzzzzzXK",
+"KXXzzzzzzzzzzXXK",
+"KXXXXXXXXXXXXXXK",
+"KXXXXXXXXXXXXXXK",
+"KKKKKKKKKKKKKKKK"],
+
+"TNT":[
+"KKKKKKKKKKKKKKKK",
+"KzzzzzzzzzzzzzzK",
+"KzRRRRRRRRRRRRzK",
+"KzRRRRRRRRRRRRzK",
+"KXXXXXXXXXXXXXXK",
+"KXXkXXkkXXkXXXXK",
+"KXkkkXkXkXkkkXXK",
+"KXkXkXkkXXkXkXXK",
+"KXkXkXkXkXkkkXXK",
+"KXXXXXXXXXXXXXXK",
+"KzRRRRRRRRRRRRzK",
+"KzRRRRRRRRRRRRzK",
+"KzRRRRRRRRRRRRzK",
+"KzzzzzzzzzzzzzzK",
+"KzzzzzzzzzzzzzzK",
+"KKKKKKKKKKKKKKKK"],
+
+"Rail":[
+"................",
+"..iii......iii..",
+"..iII......iIi..",
+"..iII......iIi..",
+"..mmmmmmmmmmmm..",
+"..iII......iIi..",
+"..iII......iIi..",
+"..mmmmmmmmmmmm..",
+"..iII......iIi..",
+"..iII......iIi..",
+"..mmmmmmmmmmmm..",
+"..iII......iIi..",
+"..iII......iIi..",
+"..mmmmmmmmmmmm..",
+"..iii......iii..",
+"................"],
+
+"Powered Rail":[
+"................",
+"..ggg......ggg..",
+"..gYY......gYg..",
+"..gYY......gYg..",
+"..RRRRRRRRRRRR..",
+"..gYY......gYg..",
+"..gYY......gYg..",
+"..RRRRRRRRRRRR..",
+"..gYY......gYg..",
+"..gYY......gYg..",
+"..RRRRRRRRRRRR..",
+"..gYY......gYg..",
+"..gYY......gYg..",
+"..RRRRRRRRRRRR..",
+"..ggg......ggg..",
+"................"],
+
+"Daylight Detector":[
+"KKKKKKKKKKKKKKKK",
+"KmmmmmmmmmmmmmmK",
+"KmKKKKKKKKKKKKmK",
+"KmKBBBBBBBBBBKmK",
+"KmKBvvvvvvvvBKmK",
+"KmKBvBBBBBBvBKmK",
+"KmKBvBvvvvBvBKmK",
+"KmKBvBvXXvBvBKmK",
+"KmKBvBvXXvBvBKmK",
+"KmKBvBvvvvBvBKmK",
+"KmKBvBBBBBBvBKmK",
+"KmKBvvvvvvvvBKmK",
+"KmKBBBBBBBBBBKmK",
+"KmKKKKKKKKKKKKmK",
+"KmmmmmmmmmmmmmmK",
+"KKKKKKKKKKKKKKKK"]
+};
+const RS_ALIAS={};   // every part now has its own design
+/* Thickness in blocks, so the 3D view gives each part its real shape.
+ Anything not listed is a full cube (observer, piston, dropper, dispenser,
+ hopper, note block, target, lamp, TNT, sticky piston). */
+const RS_THICK={
+ "Redstone Dust":0.06,"Rail":0.08,"Powered Rail":0.08,"Pressure Plate":0.08,
+ "Tripwire Hook":0.12,"Lever":0.2,"Stone Button":0.12,
+ "Repeater":0.14,"Comparator":0.14,"Daylight Detector":0.38,"Redstone Torch":0.6
+};
+
+const rsCache=new Map(),rsUrlCache=new Map();
+function rsSprite(i){
+ if(rsCache.has(i))return rsCache.get(i);
+ const part=RS[i];let cv=null;
+ // its own redstone art, else the block sprite of the same name (Hopper,
+ // Note Block), else an alias
+ const rows=part?(RS_SPRITES[part[0]]||SPRITES[part[0]]||RS_SPRITES[RS_ALIAS[part[0]]]):null;
+ if(rows){
+  cv=document.createElement("canvas");cv.width=cv.height=16;
+  const g=cv.getContext("2d");
+  const pal=Object.assign({},SP_PAL,{"1":part[1],"2":shade(part[1],.7),"3":shade(part[1],1.22)});
+  rows.forEach((r,y)=>[...r].forEach((ch,x)=>{const col=pal[ch];if(!col)return;g.fillStyle=col;g.fillRect(x,y,1,1)}));
+ }
+ rsCache.set(i,cv);return cv;
+}
+function rsCSS(i){
+ let u=rsUrlCache.get(i);if(u)return u;
+ const sp=rsSprite(i);if(!sp)return "";
+ u=sp.toDataURL();rsUrlCache.set(i,u);return u;
 }
 
 /* ================= procedural 16x16 textures ================= */
@@ -1379,7 +1758,43 @@ function buildTile(name,col,cat){
  return cv;
 }
 function tile(i){let t=texCache.get(i);if(!t){const c=C[i];t=buildTile(c[0],c[1],c[2]);texCache.set(i,t)}return t}
-const swCache=new Map(),cubeCache=new Map();
+const swCache=new Map(),cubeCache=new Map(),spriteUrlCache=new Map();
+/* Categories that are objects rather than building materials. A crafting table
+ placed with the Block tool used to draw as a generic brown square because only
+ the Object tool routed through the sprites; now both paths agree. */
+const THING=new Set(["furniture","decor","door","light","access"]);
+/* A block's real height in Minecraft, used to preset the slider when you pick
+ it. Everything unlisted is one block tall. */
+const NAT_H={"door":2,"outside":2};      // by category
+const NAT_H_NAME={"Iron Bars":1,"Chain":1,"Scaffolding":1,"Ladder":1,"Cobweb":1};
+function naturalHeight(i){
+ const c=C[i];if(!c)return 1;
+ if(c[0] in NAT_H_NAME)return NAT_H_NAME[c[0]];
+ if(/Door$/.test(c[0]))return 2;
+ return NAT_H[c[2]]||1;
+}
+/* Vertical extent as a fraction of a block, for the 3D view only. hts stays an
+ integer count of blocks; this just stops a carpet looking like a full cube. */
+const THIN_NAME={"Red Carpet":0.06,"White Carpet":0.06,"Cake":0.5,"Oak Sign":0.9,
+ "Flower Pot":0.38,"Lily Pad":0.04,"Moss Carpet":0.06};
+function thinOf(i){
+ const c=C[i];if(!c)return 1;
+ if(c[0] in THIN_NAME)return THIN_NAME[c[0]];
+ if(c[2]==="slab")return 0.5;
+ if(/Trapdoor$/.test(c[0]))return 0.19;
+ if(c[2]==="decor"&&/Carpet/.test(c[0]))return 0.06;
+ return 1;
+}
+function isThing(i){return !!C[i]&&THING.has(C[i][2])}
+function faceArt(i){                       // what a placed block shows on its face
+ if(isThing(i)){const sp=objSprite(i,false);if(sp)return sp}
+ return tile(i);
+}
+function spriteCSS(i){
+ let u=spriteUrlCache.get(i);if(u)return u;
+ const sp=objSprite(i,false);if(!sp)return swatchCSS(i);
+ u=sp.toDataURL();spriteUrlCache.set(i,u);return u;
+}
 /* A 3D block icon built from the same procedural texture as the grid — used in
  the palette so a material reads as a block, not a colour chip. */
 function cubeIcon(i){
@@ -1414,14 +1829,37 @@ function symPts(x,y){
 
 /* ================= cell ops ================= */
 function inB(x,y){return x>=0&&y>=0&&x<W&&y<H}
-function setRaw(x,y,v,h){if(!inB(x,y))return;F[fi].cells[y][x]=v;if(v===null)F[fi].hts[y][x]=1;else if(h)F[fi].hts[y][x]=clamp(h,1,12)}
+function setRaw(x,y,v,h){if(!inB(x,y))return;F[fi].cells[y][x]=v;if(v===null){F[fi].hts[y][x]=1;F[fi].base[y][x]=0}else if(h)F[fi].hts[y][x]=clamp(h,1,12)}
 function put(x,y,v,h){symPts(x,y).forEach(([a,b])=>setRaw(a,b,v,h))}
 function objAt(x,y){return F[fi].objs.find(o=>o.x===x&&o.y===y)}
 function removeGroup(x,y){const o=objAt(x,y);if(!o)return false;F[fi].objs=F[fi].objs.filter(q=>q.g!==o.g);return true}
-function clearCell(x,y){if(!inB(x,y))return;F[fi].cells[y][x]=null;F[fi].hts[y][x]=1;F[fi].rs[y][x]=null;removeGroup(x,y)}
+function clearCell(x,y){if(!inB(x,y))return;F[fi].cells[y][x]=null;F[fi].hts[y][x]=1;F[fi].base[y][x]=0;F[fi].rs[y][x]=null;removeGroup(x,y)}
 function eraseAt(x,y){symPts(x,y).forEach(([a,b])=>clearCell(a,b))}
 function setHeight(x,y,h){symPts(x,y).forEach(([a,b])=>{if(inB(a,b)&&F[fi].cells[b][a]!==null)F[fi].hts[b][a]=clamp(h,1,12)})}
 
+/* Raise or lower a stack by one. A stroke touches each cell at most once, so
+ dragging across a wall adds exactly one block everywhere rather than piling up
+ wherever the pointer happened to linger. */
+function bumpHeight(x,y,d){
+ let hit=false;
+ symPts(x,y).forEach(([a,b])=>{
+  if(!inB(a,b)||F[fi].cells[b][a]===null)return;
+  const k=a+","+b;
+  if(strokeCells){if(strokeCells.has(k))return;strokeCells.add(k)}
+  const was=F[fi].hts[b][a]||1,now=clamp(was+d,1,12);
+  if(now!==was){F[fi].hts[b][a]=now;hit=true}
+ });
+ return hit;
+}
+function bumpBase(x,y,d){
+ symPts(x,y).forEach(([a,b])=>{
+  if(!inB(a,b)||F[fi].cells[b][a]===null)return;
+  const k="b"+a+","+b;
+  if(strokeCells){if(strokeCells.has(k))return;strokeCells.add(k)}
+  F[fi].base[b][a]=clamp((F[fi].base[b][a]||0)+d,0,24);
+ });
+}
+const PAIRED=/(\bBed$|^Large Chest$)/;   // pieces that occupy two cells
 function placeObject(x,y,i,r){
  if(!inB(x,y))return;
  const name=C[i][0];let rr=r;
@@ -1432,7 +1870,7 @@ function placeObject(x,y,i,r){
  removeGroup(x,y);
  const g=gidSeq++;
  F[fi].objs.push({x,y,i,r:rr,g});
- if(name.includes("Bed")){
+ if(PAIRED.test(name)){
   const dx=[0,1,0,-1][rr],dy=[-1,0,1,0][rr],x2=x+dx,y2=y+dy;
   if(inB(x2,y2)){removeGroup(x2,y2);F[fi].objs.push({x:x2,y:y2,i,r:rr,g,part:2})}
  }
@@ -1479,7 +1917,7 @@ function draw(){if(rafP)return;rafP=true;requestAnimationFrame(render)}
 function cellTex(v,x,y,s,alpha){
  if(blueprint){ctx.globalAlpha=alpha;ctx.fillStyle="#e7f0f8";ctx.fillRect(x,y,s,s);
   ctx.strokeStyle="#5b7d99";ctx.lineWidth=1;ctx.strokeRect(x+1.5,y+1.5,s-3,s-3);ctx.globalAlpha=1;return}
- ctx.globalAlpha=alpha;ctx.drawImage(tile(v),x,y,s,s);ctx.globalAlpha=1;
+ ctx.globalAlpha=alpha;ctx.drawImage(faceArt(v),x,y,s,s);ctx.globalAlpha=1;
 }
 let showHeights=true;
 /* height outlines are batched into one stroked path per height, so a full grid stays fast */
@@ -1487,28 +1925,40 @@ function heightOutlines(buckets){
  buckets.forEach((path,h)=>{
   ctx.strokeStyle="rgba(190,225,255,"+Math.min(.75,.18+h*.06)+")";ctx.lineWidth=1;ctx.stroke(path)});
 }
+function baseLabel(bs,x,y,s){
+ if(bs<1||s<15)return;
+ ctx.globalAlpha=.85;
+ ctx.fillStyle="#1d3a5aee";ctx.fillRect(x+1,y+1,10,9);
+ ctx.fillStyle="#bfe0ff";ctx.font="bold 8px system-ui";ctx.textAlign="center";ctx.textBaseline="middle";
+ ctx.fillText("\u2191"+(bs>9?"+":bs),x+6,y+6);ctx.textAlign="left";ctx.textBaseline="alphabetic";ctx.globalAlpha=1;
+}
 function heightLabel(h,x,y,s){
  if(s<15)return;
+ ctx.globalAlpha=.8;
  ctx.fillStyle="#000a";ctx.fillRect(x+s-10,y+1,9,9);
  ctx.fillStyle="#cfe9ff";ctx.font="bold 8px system-ui";ctx.textAlign="center";ctx.textBaseline="middle";
- ctx.fillText(h>9?"+":String(h),x+s-5.5,y+6);ctx.textAlign="left";ctx.textBaseline="alphabetic";
+ ctx.fillText(h>9?"+":String(h),x+s-5.5,y+6);ctx.textAlign="left";ctx.textBaseline="alphabetic";ctx.globalAlpha=1;
 }
 function paintFloor(f,alpha,layerMin){
- const solid=alpha>.5,buckets=new Map(),labels=[];
+ const solid=alpha>.5,buckets=new Map(),labels=[],lifted=[];
  for(let y=0;y<H;y++)for(let x=0;x<W;x++){
   const v=f.cells[y]?.[x];if(v==null||!C[v])continue;
   const h=f.hts?.[y]?.[x]||1;
-  if(layerMin&&h<layerMin)continue;
+  if(layerMin){const bs0=f.base?.[y]?.[x]||0;if(!(layerMin>bs0&&layerMin<=bs0+h))continue}
   cellTex(v,x*cell,y*cell,cell,alpha);
+  const bs=f.base?.[y]?.[x]||0;
+  if(solid&&showHeights&&bs>0)lifted.push([bs,x*cell,y*cell]);
   if(!solid||!showHeights||h<2)continue;
   let pth=buckets.get(h);if(!pth){pth=new Path2D();buckets.set(h,pth)}
   pth.rect(x*cell+.5,y*cell+.5,cell-1,cell-1);
-  const left=f.cells[y]?.[x-1],lh=left!=null?(f.hts?.[y]?.[x-1]||1):0;
-  const up=f.cells[y-1]?.[x],uh=up!=null?(f.hts?.[y-1]?.[x]||1):0;
-  if(lh!==h&&uh!==h)labels.push([h,x*cell,y*cell]);   // label once per run, not every block
+  // every raised block carries its own number. An earlier version labelled only
+  // the start of a run, which meant editing one block could make a NEIGHBOUR's
+  // number appear or vanish — confusing, so the badge is now purely local.
+  labels.push([h,x*cell,y*cell]);
  }
  if(buckets.size)heightOutlines(buckets);
  labels.forEach(([h,x,y])=>heightLabel(h,x,y,cell));
+ lifted.forEach(([bs,x,y])=>baseLabel(bs,x,y,cell));
 }
 function icon(o,x,y,s,alpha){
  const c=C[o.i];if(!c)return;const n=c[0];
@@ -1531,17 +1981,12 @@ function icon(o,x,y,s,alpha){
  ctx.restore();ctx.globalAlpha=1;
 }
 function rsIcon(r,x,y,s){
- const p=RS[r.i];if(!p)return;const[n,col,shape]=p;
+ const sp=rsSprite(r.i);
+ if(sp){ctx.save();ctx.translate(x+s/2,y+s/2);ctx.rotate((r.r||0)*Math.PI/2);
+  ctx.imageSmoothingEnabled=false;ctx.drawImage(sp,-s/2,-s/2,s,s);ctx.restore();return}
+ const p=RS[r.i];if(!p)return;const col=p[1];
  ctx.save();ctx.translate(x+s/2,y+s/2);ctx.rotate((r.r||0)*Math.PI/2);ctx.translate(-s/2,-s/2);
- ctx.fillStyle=col;ctx.strokeStyle="#12060a";ctx.lineWidth=1;
- if(shape==="dust"){ctx.strokeStyle=col;ctx.lineWidth=Math.max(2,s*.16);ctx.beginPath();ctx.moveTo(0,s/2);ctx.lineTo(s,s/2);ctx.stroke();
-  ctx.beginPath();ctx.moveTo(s/2,0);ctx.lineTo(s/2,s);ctx.stroke()}
- else if(shape==="torch"){ctx.fillRect(s/2-1.5,s*.35,3,s*.5);ctx.fillStyle="#ff6a4a";ctx.beginPath();ctx.arc(s/2,s*.32,s*.15,0,7);ctx.fill()}
- else if(shape==="plate"){ctx.fillRect(s*.16,s*.16,s*.68,s*.68);ctx.strokeRect(s*.16,s*.16,s*.68,s*.68)}
- else if(shape==="arrow"){ctx.fillRect(s*.14,s*.14,s*.72,s*.72);ctx.strokeRect(s*.14,s*.14,s*.72,s*.72);
-  ctx.fillStyle="#fff";ctx.beginPath();ctx.moveTo(s/2,s*.22);ctx.lineTo(s*.72,s*.6);ctx.lineTo(s*.28,s*.6);ctx.closePath();ctx.fill()}
- else{ctx.beginPath();ctx.arc(s/2,s/2,s*.26,0,7);ctx.fill();ctx.stroke()}
- ctx.restore();
+ ctx.fillStyle=col;ctx.beginPath();ctx.arc(s/2,s/2,s*.26,0,7);ctx.fill();ctx.restore();
 }
 function previewRect(a,b,stroke,fill){
  const x0=Math.min(a[0],b[0]),x1=Math.max(a[0],b[0]),y0=Math.min(a[1],b[1]),y1=Math.max(a[1],b[1]);
@@ -1603,14 +2048,14 @@ function render(){
   if(tool==="room"){const[x0,y0,x1,y1]=roomRect(drag,dragTo,false);previewRect([x0,y0],[x1,y1],"#77c45a",C[+$("#wallMat").value][1])}
   else if(tool==="wall"){ctx.save();ctx.globalAlpha=.55;
    let[x,y]=drag,[x1,y1]=dragTo,dx=Math.abs(x1-x),sx=x<x1?1:-1,dy=-Math.abs(y1-y),sy=y<y1?1:-1,er=dx+dy;
-   for(;;){ctx.drawImage(tile(sel),x*cell,y*cell,cell,cell);if(x===x1&&y===y1)break;const e=2*er;if(e>=dy){er+=dy;x+=sx}if(e<=dx){er+=dx;y+=sy}}
+   for(;;){ctx.drawImage(faceArt(sel),x*cell,y*cell,cell,cell);if(x===x1&&y===y1)break;const e=2*er;if(e>=dy){er+=dy;x+=sx}if(e<=dx){er+=dx;y+=sy}}
    ctx.restore()}
   else if(tool==="select")previewRect(drag,dragTo,"#6fb7e8","#6fb7e8");
  }
  if(stamp&&hoverCell)drawStampGhost(stamp,hoverCell[0],hoverCell[1]);
  if(clip&&tool==="select"&&!drag&&hoverCell&&clip.pasting){
   ctx.save();ctx.globalAlpha=.5;
-  clip.c.forEach((row,yy)=>row.forEach((v,xx)=>{if(v!=null&&inB(hoverCell[0]+xx,hoverCell[1]+yy))ctx.drawImage(tile(v),(hoverCell[0]+xx)*cell,(hoverCell[1]+yy)*cell,cell,cell)}));
+  clip.c.forEach((row,yy)=>row.forEach((v,xx)=>{if(v!=null&&inB(hoverCell[0]+xx,hoverCell[1]+yy))ctx.drawImage(faceArt(v),(hoverCell[0]+xx)*cell,(hoverCell[1]+yy)*cell,cell,cell)}));
   ctx.restore();previewRect(hoverCell,[hoverCell[0]+clip.w-1,hoverCell[1]+clip.h-1],"#6fb7e8");
  }
  if(moveObj&&hoverCell){icon({...moveObj,x:hoverCell[0],y:hoverCell[1]},hoverCell[0]*cell,hoverCell[1]*cell,cell,.6);
@@ -1656,7 +2101,7 @@ function drawRulers(){
 function drawStampGhost(s,px,py){
  ctx.save();ctx.globalAlpha=.55;
  s.g.forEach((row,y)=>[...row].forEach((ch,x)=>{const m=s.idx[ch];if(m==null)return;
-  const a=px+x,b=py+y;if(inB(a,b))ctx.drawImage(tile(m),a*cell,b*cell,cell,cell)}));
+  const a=px+x,b=py+y;if(inB(a,b))ctx.drawImage(faceArt(m),a*cell,b*cell,cell,cell)}));
  ctx.restore();previewRect([px,py],[px+s.g[0].length-1,py+s.g.length-1],"#e0b84e");
 }
 function renderLabels(){
@@ -1700,12 +2145,22 @@ function eyedrop(x,y){
 }
 
 canvas.addEventListener("pointerdown",e=>{
- if(e.button!==0)return;
+ if(e.button!==0&&e.button!==2)return;
  canvas.setPointerCapture(e.pointerId);
+ downAt={x:e.clientX,y:e.clientY};dragMoved=false;
  clearTimeout(hoverTimer);$("#hoverTip").style.display="none";
  const p=position(e);
  if(buildMode)return;
- if(e.altKey){eyedrop(...p);return}
+ if(e.altKey&&e.button===0){eyedrop(...p);return}
+
+ if(e.button===2){                       // right button: lower a stack by one
+  if(e.shiftKey){rotateAt(p[0],p[1]);return}
+  strokeCells=new Set();lastPaint=p;beginChange();
+  if(tool==="lift")bumpBase(p[0],p[1],-1);
+  else if(!bumpHeight(p[0],p[1],-1)&&F[fi].cells[p[1]][p[0]]===null)toast("Nothing there to lower");
+  draw();return;
+ }
+ strokeCells=new Set();strokeMode="paint";
  beginChange();
 
  if(stamp){placeStamp(stamp,p[0],p[1]);stamp=null;commit();labelsDirty=true;draw();refresh();toast("Stamp placed");return}
@@ -1713,10 +2168,16 @@ canvas.addEventListener("pointerdown",e=>{
  if(moveObj){placeObject(p[0],p[1],moveObj.i,moveObj.r);moveObj=null;$("#status").textContent="Placed";commit();draw();refresh();return}
 
  switch(tool){
-  case "pencil":put(p[0],p[1],sel,curH);lastPaint=p;break;
+  case "pencil":
+   // clicking a block that is already this material stacks it one higher, so
+   // left/right are a matched pair with the default tool selected
+   if(F[fi].cells[p[1]][p[0]]===sel){strokeMode="bump";bumpHeight(p[0],p[1],1)}
+   else{strokeMode="paint";put(p[0],p[1],sel,curH)}
+   lastPaint=p;break;
   case "erase":eraseAt(p[0],p[1]);lastPaint=p;break;
   case "fill":flood(p[0],p[1],sel);break;
-  case "height":setHeight(p[0],p[1],e.shiftKey?Math.max(1,curH-1):curH);lastPaint=p;break;
+  case "height":e.shiftKey?setHeight(p[0],p[1],curH):bumpHeight(p[0],p[1],1);lastPaint=p;break;
+  case "lift":bumpBase(p[0],p[1],1);lastPaint=p;break;
   case "object":symPts(p[0],p[1]).forEach(([a,b])=>placeObject(a,b,sel,rot));break;
   case "redstone":symPts(p[0],p[1]).forEach(([a,b])=>{if(inB(a,b))F[fi].rs[b][a]={i:rsSel,r:rot}});lastPaint=p;break;
   case "window":{
@@ -1743,9 +2204,9 @@ canvas.addEventListener("pointermove",e=>{
  const ox=+$("#ox").value||0,oy=+$("#oy").value||0,oz=+$("#oz").value||0;
  const v=F[fi].cells[p[1]]?.[p[0]],o=objAt(p[0],p[1]),r=F[fi].rs?.[p[1]]?.[p[0]];
  const nm=o?C[o.i]?.[0]:(v!=null?C[v]?.[0]:null);
- const hh=v!=null?F[fi].hts[p[1]][p[0]]:0;
+ const hh=v!=null?F[fi].hts[p[1]][p[0]]:0,bb=v!=null?(F[fi].base?.[p[1]]?.[p[0]]||0):0;
  $("#status").textContent=`X ${ox+p[0]} · Y ${oy+fi*(+$("#floorHeight").value||4)} · Z ${oz+p[1]} · grid ${p[0]},${p[1]} · ${F[fi].name}`
-  +(nm?` · ${nm}${hh>1?" ("+hh+" tall)":""}`:"")+(r?` · ${RS[r.i][0]}`:"");
+  +(nm?` · ${nm}${hh>1?" ("+hh+" tall)":""}${bb>0?" lifted "+bb:""}`:"")+(r?` · ${RS[r.i][0]}`:"");
 
  const key=`${fi}:${p[0]}:${p[1]}`;
  if(key!==hoverKey){hoverKey=key;clearTimeout(hoverTimer);$("#hoverTip").style.display="none";
@@ -1758,23 +2219,38 @@ canvas.addEventListener("pointermove",e=>{
   const dx=Math.abs(p[0]-drag[0])+1,dz=Math.abs(p[1]-drag[1])+1;
   if(tool==="room"||tool==="wall"||tool==="select")$("#status").textContent=`${tool.toUpperCase()} · ${dx} × ${dz} blocks (${dx*dz} total)`;
   draw();return}
- if(e.buttons&&!e.altKey&&(tool==="pencil"||tool==="erase"||tool==="height"||tool==="redstone")){
+ const rightDown=(e.buttons&2);
+ if(rightDown&&!e.altKey){                 // right-drag lowers along the path
+  // ignore sub-5px wobble so a click never edits the cell next door
+  if(!dragMoved){const dx=e.clientX-(downAt?.x??e.clientX),dy=e.clientY-(downAt?.y??e.clientY);
+   if(dx*dx+dy*dy<25)return;dragMoved=true}
+
+  const a=lastPaint||p,pts=[];
+  let[x,y]=a;const[x1,y1]=p;let dx=Math.abs(x1-x),sx=x<x1?1:-1,dy=-Math.abs(y1-y),sy=y<y1?1:-1,er=dx+dy,guard=0;
+  for(;guard<4096;guard++){pts.push([x,y]);if(x===x1&&y===y1)break;const q=2*er;if(q>=dy){er+=dy;x+=sx}if(q<=dx){er+=dx;y+=sy}}
+  pts.forEach(([a2,b2])=>tool==="lift"?bumpBase(a2,b2,-1):bumpHeight(a2,b2,-1));
+  lastPaint=p;draw();return}
+ if((e.buttons&1)&&!e.altKey&&(tool==="pencil"||tool==="erase"||tool==="height"||tool==="lift"||tool==="redstone")){
+  // ignore sub-5px wobble so a click never edits the cell next door
+  if(!dragMoved){const dx=e.clientX-(downAt?.x??e.clientX),dy=e.clientY-(downAt?.y??e.clientY);
+   if(dx*dx+dy*dy<25)return;dragMoved=true}
+
   // walk every cell between the last sample and this one so a fast drag leaves no gaps
   const a=lastPaint||p,pts=[];
   let[x,y]=a;const[x1,y1]=p;let dx=Math.abs(x1-x),sx=x<x1?1:-1,dy=-Math.abs(y1-y),sy=y<y1?1:-1,er=dx+dy,guard=0;
   for(;guard<4096;guard++){pts.push([x,y]);if(x===x1&&y===y1)break;const q=2*er;if(q>=dy){er+=dy;x+=sx}if(q<=dx){er+=dx;y+=sy}}
-  const lower=e.shiftKey?Math.max(1,curH-1):curH;
   pts.forEach(([a2,b2])=>{
-   if(tool==="pencil")put(a2,b2,sel,curH);
+   if(tool==="pencil"){if(strokeMode==="bump")bumpHeight(a2,b2,1);else put(a2,b2,sel,curH)}
    else if(tool==="erase")eraseAt(a2,b2);
-   else if(tool==="height")setHeight(a2,b2,lower);
+   else if(tool==="height")e.shiftKey?setHeight(a2,b2,curH):bumpHeight(a2,b2,1);
+   else if(tool==="lift")bumpBase(a2,b2,1);
    else symPts(a2,b2).forEach(([c2,d2])=>{if(inB(c2,d2))F[fi].rs[d2][c2]={i:rsSel,r:rot}})});
   lastPaint=p;draw();return}
  if(stamp||moveObj||(clip&&clip.pasting))draw();
 });
 
 function endDrag(e){
- lastPaint=null;
+ lastPaint=null;strokeCells=null;downAt=null;dragMoved=false;
  if(!drag){commit();refresh();return}
  const p=e?position(e):dragTo||drag;
  if(tool==="wall")line(drag,p,sel,curH);
@@ -1783,8 +2259,8 @@ function endDrag(e){
   if($("#autoLabel").checked){F[fi].labels.push({x:x0+1,y:y0+1,t:`${x1-x0+1}×${y1-y0+1}`,auto:true});labelsDirty=true}
  }else if(tool==="select"){
   const x0=Math.min(drag[0],p[0]),x1=Math.max(drag[0],p[0]),y0=Math.min(drag[1],p[1]),y1=Math.max(drag[1],p[1]);
-  clip={w:x1-x0+1,h:y1-y0+1,c:[],ht:[],objs:[],labels:[],pasting:false};
-  for(let y=y0;y<=y1;y++){clip.c.push(F[fi].cells[y].slice(x0,x1+1));clip.ht.push(F[fi].hts[y].slice(x0,x1+1))}
+  clip={w:x1-x0+1,h:y1-y0+1,c:[],ht:[],bs:[],objs:[],labels:[],pasting:false};
+  for(let y=y0;y<=y1;y++){clip.c.push(F[fi].cells[y].slice(x0,x1+1));clip.ht.push(F[fi].hts[y].slice(x0,x1+1));clip.bs.push((F[fi].base[y]||[]).slice(x0,x1+1))}
   F[fi].objs.forEach(o=>{if(o.x>=x0&&o.x<=x1&&o.y>=y0&&o.y<=y1&&o.part!==2)clip.objs.push({dx:o.x-x0,dy:o.y-y0,i:o.i,r:o.r})});
   F[fi].labels.forEach(l=>{if(l.x>=x0&&l.x<=x1&&l.y>=y0&&l.y<=y1)clip.labels.push({dx:l.x-x0,dy:l.y-y0,t:l.t,auto:l.auto})});
   $("#paste").classList.add("active");toast(`Copied ${clip.w}×${clip.h} — hit Paste, then click where it goes`);
@@ -1794,22 +2270,24 @@ function endDrag(e){
 canvas.addEventListener("pointerup",endDrag);
 canvas.addEventListener("pointercancel",()=>{drag=null;dragTo=null;commit();draw()});
 canvas.addEventListener("pointerleave",()=>{clearTimeout(hoverTimer);hoverKey="";hoverCell=null;$("#hoverTip").style.display="none";if(stamp||moveObj)draw()});
-canvas.addEventListener("contextmenu",e=>{
- e.preventDefault();const p=position(e);
- const o=objAt(p[0],p[1]),r=F[fi].rs?.[p[1]]?.[p[0]];
- if(o){beginChange();const grp=F[fi].objs.filter(q=>q.g===o.g);const nr=((o.r||0)+1)%4;
-  const head=grp.find(q=>q.part!==2)||grp[0];F[fi].objs=F[fi].objs.filter(q=>q.g!==o.g);
+function rotateAt(x,y){
+ const o=objAt(x,y),r=F[fi].rs?.[y]?.[x];
+ if(o){beginChange();const grp=F[fi].objs.filter(q=>q.g===o.g);
+  const head=grp.find(q=>q.part!==2)||grp[0],nr=((o.r||0)+1)%4;
+  F[fi].objs=F[fi].objs.filter(q=>q.g!==o.g);
   placeObject(head.x,head.y,head.i,nr);commit();draw();refresh();toast("Rotated "+C[o.i][0])}
- else if(r){beginChange();r.r=((r.r||0)+1)%4;commit();draw()}
+ else if(r){beginChange();r.r=((r.r||0)+1)%4;commit();draw();toast("Rotated "+RS[r.i][0])}
  else{rot=(rot+1)%4;selection();toast("Next piece faces "+["North","East","South","West"][rot])}
-});
+}
+canvas.addEventListener("contextmenu",e=>e.preventDefault());
 canvas.addEventListener("wheel",e=>{
  if(!(e.ctrlKey||e.metaKey))return;e.preventDefault();
  zoom=clamp(+(zoom+(e.deltaY<0?.12:-.12)).toFixed(2),.3,3);draw();
 },{passive:false});
 
 function pasteAt(px,py){
- clip.c.forEach((row,yy)=>row.forEach((v,xx)=>{if(v!=null)setRaw(px+xx,py+yy,v,clip.ht[yy][xx])}));
+ clip.c.forEach((row,yy)=>row.forEach((v,xx)=>{if(v==null)return;setRaw(px+xx,py+yy,v,clip.ht[yy][xx]);
+  if(inB(px+xx,py+yy))F[fi].base[py+yy][px+xx]=clip.bs?.[yy]?.[xx]||0}));
  clip.objs.forEach(o=>placeObject(px+o.dx,py+o.dy,o.i,o.r));
  clip.labels.forEach(l=>{if(inB(px+l.dx,py+l.dy))F[fi].labels.push({x:px+l.dx,y:py+l.dy,t:l.t,auto:l.auto})});
 }
@@ -1840,8 +2318,9 @@ function labelList(){
 }
 function selection(){
  const b=C[sel];
- $("#selection").innerHTML=`<div class=row><span class=sw style="background-image:url(${cubeIcon(sel)});background-size:contain;background-repeat:no-repeat;background-position:center;border:0;flex:none"></span><b style="flex:1">${b[0]}</b></div>
- <div class=small>${b[2]} · next piece faces ${["North","East","South","West"][rot]} · ${curH} block${curH>1?"s":""} tall</div>`;
+ $("#selection").innerHTML=`<div class=row><span class=sw style="background-image:url(${isThing(sel)?spriteCSS(sel):cubeIcon(sel)});background-size:contain;background-repeat:no-repeat;background-position:center;border:0;flex:none"></span><b style="flex:1">${b[0]}</b></div>
+ <div class=small>${b[2]} · next piece faces ${["North","East","South","West"][rot]} · ${curH} block${curH>1?"s":""} tall</div>
+ ${isThing(sel)?`<p class=small style="margin:6px 0 0;color:#8fbf72">Furniture: the <b>Object</b> tool (<kbd>6</kbd>) also lets you rotate and move it.</p>`:""}`;
 }
 function refresh(){counts();labelList();selection()}
 function palette(q=""){
@@ -1851,8 +2330,13 @@ function palette(q=""){
   if(ql&&!(b[0].toLowerCase().includes(ql)||b[2].toLowerCase().includes(ql)))return;
   shown++;if(shown>260)return;
   const z=document.createElement("button");z.className="mat"+(i===sel?" active":"");z.type="button";
-  z.innerHTML=`<span class=sw style="background-image:url(${cubeIcon(i)});background-size:contain;background-repeat:no-repeat;background-position:center;border:0"></span><span>${b[0]}</span>`;
-  z.onclick=()=>{sel=i;palette($("#search").value);selection();if(tool==="erase"||tool==="move")setTool("pencil")};
+  z.innerHTML=`<span class=sw style="background-image:url(${isThing(i)?spriteCSS(i):cubeIcon(i)});background-size:contain;background-repeat:no-repeat;background-position:center;border:0"></span><span>${b[0]}</span>`;
+  z.onclick=()=>{
+   sel=i;
+   const nh=naturalHeight(i);
+   if(nh!==curH){curH=nh;$("#curH").value=nh;$("#curHv").textContent=nh+" tall"}
+   palette($("#search").value);selection();
+   if(tool==="erase"||tool==="move")setTool("pencil")};
   e.append(z)});
  if(!shown)e.innerHTML="<p class=small>No blocks match that search.</p>";
 }
@@ -1896,61 +2380,115 @@ function rotateFloor(f){
  const d=isoDir,w=(d%2)?H:W,h=(d%2)?W:H;
  const cells=Array.from({length:h},()=>Array(w).fill(null));
  const hts=Array.from({length:h},()=>Array(w).fill(1));
+ const base=Array.from({length:h},()=>Array(w).fill(0));
  for(let z=0;z<H;z++)for(let x=0;x<W;x++){
   let nx,nz;
   switch(d){case 1:nx=z;nz=W-1-x;break;case 2:nx=W-1-x;nz=H-1-z;break;case 3:nx=H-1-z;nz=x;break;default:nx=x;nz=z}
   cells[nz][nx]=f.cells[z]?.[x]??null;
   hts[nz][nx]=f.hts?.[z]?.[x]||1;
+  base[nz][nx]=f.base?.[z]?.[x]||0;
  }
- return{w,h,cells,hts};
+ return{w,h,cells,hts,base};
+}
+let isoFloor=-1,isoSpread=false;
+function isoFloorOptions(){
+ const sel=$("#isoFloorSel");if(!sel)return;
+ sel.innerHTML=`<option value="-1">All floors</option>`+
+  F.map((f,i)=>`<option value="${i}">${f.name}</option>`).join("");
+ if(isoFloor>=F.length)isoFloor=-1;
+ sel.value=String(isoFloor);
+}
+/* The top face is a diamond, so rotating its texture is just picking a
+ different corner as the origin: p2 = p1 + p3 - p0 stays the 4th corner. */
+function isoTop(g,img,X,Yt,s,r,flat){
+ const V=[[X-s,Yt],[X,Yt-s*.5],[X+s,Yt],[X,Yt+s*.5]];   // W, N, E, S
+ const k=((r|0)%4+4)%4, p0=V[k], p1=V[(k+1)%4], p3=V[(k+3)%4];
+ isoFace(g,img, p0[0],p0[1], p1[0],p1[1], p3[0],p3[1], 0, flat);
 }
 function isoRender(){
  const ic=$("#iso"),g=ic.getContext("2d");
  g.setTransform(1,0,0,1,0,0);
  g.fillStyle="#10161d";g.fillRect(0,0,ic.width,ic.height);
  const fh=+$("#floorHeight").value||4;
- let maxTop=0;F.forEach((f,lev)=>f.hts.forEach(r=>r.forEach(h=>{maxTop=Math.max(maxTop,lev*fh+h)})));
- const span=Math.max(W+H,1);
- const s=clamp(Math.min((ic.width-40)/span,(ic.height-60)/(span*.5+maxTop*1.05)),2,14);
- const ox=ic.width/2,oy=48+maxTop*s*.55;
+ const levels=isoFloor<0?F.map((f,i)=>i):[isoFloor];
+ // a single floor sits at ground level; stacked floors can be spread for a look inside
+ const gap=isoSpread?Math.max(3,Math.round(fh*.75)):0;
+ const baseOf=i=>isoFloor<0?(levels.indexOf(i)*(fh+gap)):0;
+
+ let maxTop=0,any=false;
+ levels.forEach(i=>{const f=F[i];
+  f.cells.forEach((row,z)=>row.forEach((v,x)=>{
+   if(v==null)return;any=true;
+   maxTop=Math.max(maxTop,baseOf(i)+(f.base?.[z]?.[x]||0)+(f.hts[z][x]||1));}));
+  f.objs.forEach(o=>{any=true;const v=f.cells[o.y]?.[o.x];
+   maxTop=Math.max(maxTop,baseOf(i)+(f.base?.[o.y]?.[o.x]||0)+(v!=null?(f.hts[o.y][o.x]||1):1)+1)});
+ });
+ if(!any)maxTop=1;
+
+ /* Fit the whole projection instead of guessing. Screen extents of the
+    isometric box: width ≈ (W+H)·s, height ≈ (W+H-2)·s/2 + maxTop·s, plus a
+    cube's own half-diamond top and bottom. Earlier versions used an ad-hoc
+    origin and clipped tall builds off the top of the canvas. */
+ const padX=18,padTop=58,padBot=16;
+ const availW=ic.width-padX*2,availH=ic.height-padTop-padBot;
+ const wUnits=W+H+1, hUnits=(W+H-2)*.5+maxTop+2.5;
+ const s=clamp(Math.min(availW/wUnits,availH/hUnits),1.5,16);
+ const ox=ic.width/2-(W-H)*s/2;
+ const oy=padTop+maxTop*s+s*.5;
+
  const rotXZ=(x,z)=>{switch(isoDir){case 1:return[z,W-1-x];case 2:return[W-1-x,H-1-z];case 3:return[H-1-z,x];default:return[x,z]}};
  const cubes=[];let faces=0;
- F.forEach((f,lev)=>{
-  const base=lev*fh,R=rotateFloor(f);
+ levels.forEach(i=>{
+  const f=F[i],base=baseOf(i),R=rotateFloor(f);
   for(let z=0;z<R.h;z++)for(let x=0;x<R.w;x++){
    const v=R.cells[z][x];if(v==null||!C[v])continue;
-   const h=R.hts[z][x];
-   for(let y=0;y<h;y++){
-    // +x neighbour hides the lower-right face, +z hides the lower-left,
-    // the block above hides the top. All three hidden ⇒ skip the cube.
-    const hideR=(R.cells[z]?.[x+1]!=null)&&(R.hts[z][x+1]||1)>y;
-    const hideL=(R.cells[z+1]?.[x]!=null)&&(R.hts[z+1]?.[x]||1)>y;
-    const hideT=y+1<h;
+   const h=R.hts[z][x],bs=R.base[z][x];
+   // a neighbour only hides a face if it is solid at that same absolute level
+   const occ=(ax,az,ay)=>{const nv=R.cells[az]?.[ax];if(nv==null||thinOf(nv)<1)return false;
+    const nb=R.base[az][ax],nh=R.hts[az][ax]||1;return ay>=nb&&ay<nb+nh};
+   for(let y=bs;y<bs+h;y++){
+    const hideR=occ(x+1,z,y),hideL=occ(x,z+1,y),hideT=(y+1<bs+h);
     if(hideR&&hideL&&hideT)continue;
     faces+=(hideR?0:1)+(hideL?0:1)+(hideT?0:1);
-    cubes.push([x,z,base+y,v,hideT,0,0,hideL,hideR])}
+    cubes.push([x,z,base+y,v,hideT,0,0,hideL,hideR,0])}
   }
-  f.objs.forEach(o=>{if(o.part===2&&!/Bed/.test(C[o.i]?.[0]||""))return;
-   const v=f.cells[o.y]?.[o.x];const h=v!=null?(f.hts[o.y][o.x]||1):1;
-   const[px,pz]=rotXZ(o.x,o.y);faces+=3;cubes.push([px,pz,base+h,o.i,false,1,o.part===2,false,false])});
+  f.objs.forEach(o=>{if(o.part===2&&!PAIRED.test(C[o.i]?.[0]||""))return;
+   const v=f.cells[o.y]?.[o.x];const bs=f.base?.[o.y]?.[o.x]||0;const h=v!=null?bs+(f.hts[o.y][o.x]||1):0;
+   const[px,pz]=rotXZ(o.x,o.y);faces+=3;cubes.push([px,pz,base+h,o.i,false,1,o.part===2,false,false,(o.r||0)+isoDir])});
+  f.rs?.forEach((row,z)=>row.forEach((r,x)=>{
+   if(!r||!RS[r.i])return;
+   const v=f.cells[z]?.[x],h=v!=null?((f.base?.[z]?.[x]||0)+(f.hts[z][x]||1)):0;
+   const[px,pz]=rotXZ(x,z);faces+=3;
+   cubes.push([px,pz,base+h,r.i,false,2,false,false,false,(r.r||0)+isoDir])}));
  });
  cubes.sort((a,b)=>(a[0]+a[1]+a[2])-(b[0]+b[1]+b[2]));
- // budget is faces actually drawn, not cubes — a packed build hides most of them
  const textured=isoTextured&&faces<=30000;
  g.imageSmoothingEnabled=true;
- cubes.forEach(([x,z,y,mi,hideT,isObj,foot,hideL,hideR])=>{
-  const col=C[mi]?.[1]||"#888";
+ cubes.forEach(([x,z,y,mi,hideT,kind,foot,hideL,hideR,rot])=>{
   const X=ox+(x-z)*s,Y=oy+(x+z)*s*.5-y*s;
-  const sc=isObj?s*.6:s,Yo=Y+(isObj?(s-sc)*.5:0);
-  const img=textured?(isObj?(objSprite(mi,!!foot)||tile(mi)):tile(mi)):null;
-  if(!hideL)isoFace(g,img, X-sc,Yo, X,Yo+sc*.5, X-sc,Yo+sc, .30, textured?null:shade(col,.72));
-  if(!hideR)isoFace(g,img, X,Yo+sc*.5, X+sc,Yo, X,Yo+sc*.5+sc, .48, textured?null:shade(col,.52));
-  if(!hideT)isoFace(g,img, X-sc,Yo, X,Yo-sc*.5, X,Yo+sc*.5, 0, textured?null:col);
+  if(kind===2){
+   const p=RS[mi],sp=textured?rsSprite(mi):null,col=p?.[1]||"#c02a20";
+   // th = s gives a full cube; a thin part keeps its bottom on the block below
+   const th=Math.max(1.2,s*(RS_THICK[p?.[0]]??1)),Yt=Y+s-th;
+   isoFace(g,sp, X-s,Yt, X,Yt+s*.5, X-s,Yt+th, .30, sp?null:shade(col,.72));
+   isoFace(g,sp, X,Yt+s*.5, X+s,Yt, X,Yt+s*.5+th, .48, sp?null:shade(col,.52));
+   isoTop(g,sp, X,Yt,s, rot, sp?null:col);
+   return;
+  }
+  const col=C[mi]?.[1]||"#888";
+  const hw=kind?s*.6:s;                                  // half-width of the diamond
+  const thk=kind?hw:Math.max(1.2,s*thinOf(mi));          // vertical extent
+  const Yo=kind?Y+(s-hw)*.5:Y+(s-thk);                   // thin blocks rest on the level below
+  const img=textured?(kind?(objSprite(mi,!!foot)||tile(mi)):faceArt(mi)):null;
+  if(!hideL)isoFace(g,img, X-hw,Yo, X,Yo+hw*.5, X-hw,Yo+thk, .30, textured?null:shade(col,.72));
+  if(!hideR)isoFace(g,img, X,Yo+hw*.5, X+hw,Yo, X,Yo+hw*.5+thk, .48, textured?null:shade(col,.52));
+  if(!hideT)isoTop(g,img, X,Yo,hw, kind===1?rot:0, textured?null:col);
  });
  g.setTransform(1,0,0,1,0,0);
  g.fillStyle="#dbe5ee";g.font="bold 15px system-ui";g.fillText($("#name").value||"Untitled build",16,26);
  g.fillStyle="#91a2b4";g.font="12px system-ui";
- g.fillText(`${W} × ${H} blocks · ${F.length} floor${F.length>1?"s":""} · ${maxTop} blocks tall · ${cubes.length.toLocaleString()} blocks`
+ const which=isoFloor<0?`all ${F.length} floor${F.length>1?"s":""}`:`“${F[isoFloor].name}” only`;
+ g.fillText(`${W} × ${H} blocks · ${which} · ${maxTop} blocks tall · ${cubes.length.toLocaleString()} blocks`
   +(textured?"":" · flat shading (too big to texture)"),16,45);
  g.fillText("View "+["South-east","South-west","North-west","North-east"][isoDir],ic.width-130,26);
 }
@@ -1986,17 +2524,22 @@ function buildCommands(){
  let skipped=new Set();
  F.forEach((f,lev)=>{
   out.push(`# ---- ${f.name} (Y ${oy+lev*fh}) ----`);
-  let maxh=1;f.hts.forEach(r=>r.forEach(h=>maxh=Math.max(maxh,h)));
-  for(let y=0;y<maxh;y++){
+  let maxTop=1;
+  f.cells.forEach((r,z)=>r.forEach((v,x)=>{if(v!=null)maxTop=Math.max(maxTop,(f.base?.[z]?.[x]||0)+(f.hts[z][x]||1))}));
+  // a cell occupies absolute levels base .. base+height-1, so runs only merge
+  // where both cells are actually present at the level being written
+  const occ=(x,z,y)=>{const v=f.cells[z][x];if(v==null)return null;
+   const bs=f.base?.[z]?.[x]||0,h=f.hts[z][x]||1;return(y>=bs&&y<bs+h)?v:null};
+  for(let y=0;y<maxTop;y++){
    for(let z=0;z<H;z++){
     let x=0;
     while(x<W){
-     const v=f.cells[z][x],h=f.hts[z][x]||1;
-     if(v==null||h<=y){x++;continue}
+     const v=occ(x,z,y);
+     if(v==null){x++;continue}
      const id=mcid(C[v][0]);
      if(!id){skipped.add(C[v][0]);x++;continue}
      let x2=x;
-     while(x2+1<W&&f.cells[z][x2+1]===v&&(f.hts[z][x2+1]||1)>y)x2++;
+     while(x2+1<W&&occ(x2+1,z,y)===v)x2++;
      const Y=oy+lev*fh+y;
      out.push(x2>x?`fill ${ox+x} ${Y} ${oz+z} ${ox+x2} ${Y} ${oz+z} ${id}`:`setblock ${ox+x} ${Y} ${oz+z} ${id}`);
      x=x2+1;
@@ -2004,10 +2547,11 @@ function buildCommands(){
    }
   }
   f.objs.forEach(o=>{if(o.part===2)return;const id=mcid(C[o.i][0]);if(!id){skipped.add(C[o.i][0]);return}
-   const base=f.cells[o.y]?.[o.x]!=null?(f.hts[o.y][o.x]||1):0;
-   out.push(`setblock ${ox+o.x} ${oy+lev*fh+base} ${oz+o.y} ${id}`)});
+   const top=f.cells[o.y]?.[o.x]!=null?((f.base?.[o.y]?.[o.x]||0)+(f.hts[o.y][o.x]||1)):0;
+   out.push(`setblock ${ox+o.x} ${oy+lev*fh+top} ${oz+o.y} ${id}`)});
   f.rs?.forEach((row,z)=>row.forEach((r,x)=>{if(!r)return;const id=mcid(RS[r.i][0]);if(!id)return;
-   out.push(`setblock ${ox+x} ${oy+lev*fh} ${oz+z} ${id}`)}));
+   const top=f.cells[z]?.[x]!=null?((f.base?.[z]?.[x]||0)+(f.hts[z][x]||1)):0;
+   out.push(`setblock ${ox+x} ${oy+lev*fh+top} ${oz+z} ${id}`)}));
   out.push("");
  });
  if(skipped.size)out.push("# Placed by hand (not real blocks): "+[...skipped].join(", "));
@@ -2046,9 +2590,11 @@ async function loadFromHash(){
 /* ================= build order mode ================= */
 function computeSteps(){
  buildSteps=[];
- F.forEach((f,i)=>{let maxh=0;f.hts.forEach((r,y)=>r.forEach((h,x)=>{if(f.cells[y][x]!=null)maxh=Math.max(maxh,h)}));
-  for(let l=1;l<=Math.max(maxh,1);l++){
-   let n=0;f.cells.forEach((r,y)=>r.forEach((v,x)=>{if(v!=null&&(f.hts[y][x]||1)>=l)n++}));
+ F.forEach((f,i)=>{let maxTop=0;
+  f.cells.forEach((r,y)=>r.forEach((v,x)=>{if(v!=null)maxTop=Math.max(maxTop,(f.base?.[y]?.[x]||0)+(f.hts[y][x]||1))}));
+  for(let l=1;l<=Math.max(maxTop,1);l++){
+   let n=0;f.cells.forEach((r,y)=>r.forEach((v,x)=>{if(v==null)return;
+    const bs=f.base?.[y]?.[x]||0,h=f.hts[y][x]||1;if(l>bs&&l<=bs+h)n++}));
    if(n)buildSteps.push({f:i,layer:l,n})}});
 }
 function buildUpdate(){
@@ -2078,13 +2624,14 @@ function migrate(d){
   const cells=Array.from({length:nh},(_,y)=>Array.from({length:nw},(_,x)=>{
    const v=f.cells?.[y]?.[x];return(typeof v==="number"&&v>=0&&v<C.length)?v:null}));
   const hts=Array.from({length:nh},(_,y)=>Array.from({length:nw},(_,x)=>clamp(+(f.hts?.[y]?.[x])||1,1,12)));
+  const base=Array.from({length:nh},(_,y)=>Array.from({length:nw},(_,x)=>clamp(+(f.base?.[y]?.[x])||0,0,24)));
   const rs=Array.from({length:nh},(_,y)=>Array.from({length:nw},(_,x)=>{
    const r=f.rs?.[y]?.[x];return(r&&typeof r.i==="number"&&r.i<RS.length)?{i:r.i,r:(+r.r||0)%4}:null}));
   const objs=(Array.isArray(f.objs)?f.objs:[]).filter(o=>o&&typeof o.i==="number"&&o.i>=0&&o.i<C.length&&o.x<nw&&o.y<nh&&o.x>=0&&o.y>=0)
    .map(o=>({x:o.x|0,y:o.y|0,i:o.i,r:(+o.r||0)%4,g:o.g||gidSeq++,part:o.part}));
   const labels=(Array.isArray(f.labels)?f.labels:[]).filter(l=>l&&l.t!=null&&l.x<nw&&l.y<nh)
    .map(l=>({x:l.x|0,y:l.y|0,t:String(l.t).slice(0,60),auto:!!l.auto}));
-  return{name:String(f.name||("Floor "+(i+1))).slice(0,40),cells,hts,rs,objs,labels};
+  return{name:String(f.name||("Floor "+(i+1))).slice(0,40),cells,hts,base,rs,objs,labels};
  });
  return{id:d.id,name:String(d.name||"Imported build").slice(0,80),W:nw,H:nh,F:floors,
   notes:String(d.notes||""),origin:d.origin||{x:0,y:64,z:0},floorHeight:clamp(+d.floorHeight||4,1,24)};
@@ -2195,7 +2742,7 @@ function exportPNG(){
   g.fillStyle="#c8d2dc";g.fillText(n.length>20?n.slice(0,19)+"…":n,lx+17,ly);
   g.fillStyle="#8b98a7";g.textAlign="right";g.fillText(String(q),lx+legW-24,ly);g.textAlign="left";ly+=17});
  g.fillStyle="#6f7d8c";g.font="11px system-ui";
- g.fillText("Made with MinePlan V3.9",pad,out.height-10);
+ g.fillText("Made with MinePlan V3.16",pad,out.height-10);
  // north arrow
  g.save();g.translate(out.width-46,head+6);g.fillStyle="#9aa8b7";
  g.beginPath();g.moveTo(0,-2);g.lineTo(6,12);g.lineTo(0,8);g.lineTo(-6,12);g.closePath();g.fill();
@@ -2246,7 +2793,7 @@ function buildRsUI(){
  const e=$("#rsPalette");e.innerHTML="";
  RS.forEach((p,i)=>{
   const b=document.createElement("button");b.className="stamp"+(i===rsSel?" active":"");b.type="button";
-  b.innerHTML=`<span class=sw style="background:${p[1]};width:26px;height:26px"></span><span>${p[0]}</span>`;
+  b.innerHTML=`<span class=sw style="background-image:url(${rsCSS(i)});background-size:contain;background-repeat:no-repeat;background-position:center;border:0;width:30px;height:30px"></span><span>${p[0]}</span>`;
   b.onclick=()=>{rsSel=i;buildRsUI();rsDialog.close();toast(p[0]+" selected — click on the grid")};
   e.append(b)});
 }
@@ -2278,9 +2825,10 @@ $("#resize").onclick=()=>{
  if(loss&&!confirm(`Resizing to ${nw}×${nh} will delete ${loss} block${loss>1?"s":""} outside the new edge. Carry on?`))return;
  beginChange();W=nw;H=nh;
  F.forEach(f=>{
-  const oc=f.cells,oh=f.hts,or=f.rs;
+  const oc=f.cells,oh=f.hts,ob=f.base,or=f.rs;
   f.cells=Array.from({length:H},(_,y)=>Array.from({length:W},(_,x)=>oc[y]?.[x]??null));
   f.hts=Array.from({length:H},(_,y)=>Array.from({length:W},(_,x)=>oh?.[y]?.[x]??1));
+  f.base=Array.from({length:H},(_,y)=>Array.from({length:W},(_,x)=>ob?.[y]?.[x]??0));
   f.rs=Array.from({length:H},(_,y)=>Array.from({length:W},(_,x)=>or?.[y]?.[x]??null));
   f.objs=f.objs.filter(o=>o.x<W&&o.y<H);f.labels=f.labels.filter(l=>l.x<W&&l.y<H)});
  $("#gw").value=W;$("#gh").value=H;commit();labelsDirty=true;draw();refresh();
@@ -2311,10 +2859,12 @@ $("#import").onchange=e=>{
 };
 $("#png").onclick=exportPNG;
 $("#mode").onclick=()=>{blueprint=!blueprint;$("#mode").textContent=blueprint?"Build View":"Blueprint";$("#mode").classList.toggle("active",blueprint);draw()};
-$("#preview3d").onclick=()=>{previewDialog.showModal();isoRender()};
+$("#preview3d").onclick=()=>{isoFloorOptions();previewDialog.showModal();isoRender()};
 $("#closePreview").onclick=()=>previewDialog.close();
 $("#isoRot").onclick=()=>{isoDir=(isoDir+1)%4;isoRender()};
 $("#isoTex").onchange=e=>{isoTextured=e.target.checked;isoRender()};
+$("#isoFloorSel").onchange=e=>{isoFloor=+e.target.value;isoRender()};
+$("#isoSpread").onchange=e=>{isoSpread=e.target.checked;isoRender()};
 $("#isoPng").onclick=()=>{const a=document.createElement("a");
  a.download=($("#name").value||"build").replace(/[^\w-]+/g,"_")+"_3d.png";a.href=$("#iso").toDataURL("image/png");a.click()};
 $("#shopBtn").onclick=()=>{shopRender();shopDialog.showModal()};
@@ -2338,7 +2888,7 @@ $("#bPrev").onclick=()=>{buildAt=Math.max(buildAt-1,0);buildUpdate()};
 $("#name").oninput=()=>{dirty=true};$("#notes").oninput=()=>{dirty=true};
 
 /* ================= keyboard ================= */
-const TOOLKEY={"1":"pencil","2":"erase","3":"wall","4":"room","5":"fill","6":"object","7":"label","8":"select","9":"window","0":"move","h":"height","r":"redstone"};
+const TOOLKEY={"1":"pencil","2":"erase","3":"wall","4":"room","5":"fill","6":"object","7":"label","8":"select","9":"window","0":"move","h":"height","l":"lift","r":"redstone"};
 document.addEventListener("keydown",e=>{
  const t=e.target.tagName;
  if(t==="INPUT"||t==="TEXTAREA"||t==="SELECT"){
@@ -2375,6 +2925,23 @@ document.addEventListener("visibilitychange",()=>{if(document.hidden&&dirty)back
 
 /* ================= what's new, shown once per version ================= */
 const NOTES={
+ "3.16":["New Lift tool: raise a block off the ground for balconies, arches, bridges and hanging lights. Left-click lifts, right-click drops.",
+        "Blocks now start at their real height \u2014 pick a door and it is 2 tall automatically.",
+        "Slabs, carpets and trapdoors render at their real thickness in 3D instead of as full cubes.",
+        "Large Chest added as a proper two-block piece."],
+ "3.15":["Redstone is proper 3D in the preview now \u2014 pistons, droppers, lamps and TNT are full blocks; dust, rails and plates stay thin.",
+        "Top faces show which way a part or piece of furniture is facing, and turn with the view."],
+ "3.14":["The 3D preview no longer clips tall builds off the top \u2014 it now fits the whole thing properly.",
+        "Pick a single floor in the 3D preview, or spread the floors apart, so you can actually see inside each one."],
+ "3.13":["Redstone now shows in the 3D preview \u2014 it was being counted and exported but never drawn.",
+        "Height numbers no longer appear or vanish on the block next door when you edit one.",
+        "A slightly shaky click can no longer spill into the neighbouring cell."],
+ "3.12":["Left-click now stacks a block with the Block tool too \u2014 place it once, click again to raise it. Right-click still lowers.",
+        "All 21 redstone parts have proper pixel art instead of rough shapes, in the grid and in the picker."],
+ "3.11":["Block heights are now incremental: left-click raises a block by one, right-click lowers it. Drag to do a whole wall.",
+        "Right-click no longer rotates \u2014 hold Shift with it if you want to turn an object."],
+ "3.10":["Furniture now looks like furniture however you place it \u2014 picking a crafting table with the Block tool used to give you a plain brown square.",
+        "The palette shows furniture as its top-down art, and plain blocks as little 3D cubes."],
  "3.9":["The 3D preview now shows real block surfaces \u2014 wood grain, brick courses, stone speckle \u2014 instead of flat colours.",
         "Furniture keeps its top-down art on the top face, so you can spot the crafting table from above in 3D.",
         "The block palette shows little 3D blocks instead of colour chips."],
