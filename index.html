@@ -1,0 +1,1462 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#121820">
+<meta name="description" content="MinePlan — a block-by-block planner for Minecraft builds.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='10' fill='%23171d25'/%3E%3Crect x='10' y='34' width='44' height='8' fill='%23b88752'/%3E%3Crect x='10' y='42' width='44' height='8' fill='%238a6340'/%3E%3Crect x='22' y='14' width='20' height='20' fill='%2377c45a'/%3E%3Crect x='26' y='18' width='12' height='12' fill='%2365a84a'/%3E%3C/svg%3E">
+<title>MinePlan V3.6</title>
+<!-- ===== bump this ONE line when you upload a new version ===== -->
+<meta name="mineplan-build" content="2026-09-17.1">
+<style>
+:root{--bg:#0d1117;--p:#171d25;--p2:#202833;--line:#344050;--txt:#edf3f8;--mut:#9aa8b7;--green:#65a84a;--acc:#77c45a}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--txt);font:13px system-ui,Segoe UI,sans-serif}
+header{min-height:54px;display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:7px 11px;background:#121820;border-bottom:1px solid var(--line)}
+.logo{font-weight:900;font-size:18px;margin-right:6px;white-space:nowrap}.logo b{color:var(--acc)}
+button,input,select,textarea,.file{background:#222c38;color:#fff;border:1px solid #435166;border-radius:6px;padding:6px 8px;font:inherit}
+button,.file{cursor:pointer;white-space:nowrap}button:hover{background:#2d3948}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--acc);outline-offset:1px}
+.active,.primary{background:#477d38!important;outline:1px solid var(--acc)}
+.danger{background:#713636}.ghostbtn{opacity:.55}
+.spacer{flex:1}#name{flex:1 1 150px;min-width:110px;max-width:280px}
+.app{height:calc(100vh - 54px);display:grid;min-height:0;
+ grid-template-columns:var(--lw,300px) 6px minmax(0,1fr) 6px var(--rw,272px)}
+.resizer{background:transparent;cursor:col-resize;position:relative;touch-action:none}
+.resizer::after{content:"";position:absolute;inset:0 2px;background:var(--line);transition:background .12s}
+.resizer:hover::after,.resizer.dragging::after{background:var(--acc)}
+aside{background:var(--p);overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;min-width:0}.left{border-right:1px solid var(--line)}.right{border-left:1px solid var(--line)}
+.sec{padding:10px 11px;border-bottom:1px solid var(--line);min-width:0;overflow-wrap:anywhere}
+.sec>*{min-width:0;max-width:100%}
+aside .row>button,aside .row>.file{flex:1 1 auto;min-width:72px;white-space:normal}
+aside .row>button.narrow{min-width:44px}
+aside .floor{white-space:normal;overflow-wrap:anywhere}
+h3{font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:#b7c2cf;margin:0 0 7px;display:flex;flex-wrap:wrap;gap:4px;justify-content:space-between;align-items:baseline}
+h3 .hint{font-weight:400;letter-spacing:0;text-transform:none;color:#6f7d8c;font-size:10px;min-width:0}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
+.tools{display:grid;grid-template-columns:repeat(auto-fit,minmax(92px,1fr));gap:5px}
+.tools button{display:flex;align-items:center;gap:5px;font-size:11.5px;padding:6px 14px 6px 5px;position:relative;white-space:normal;min-width:0;text-align:left}
+.tools button i{position:absolute;right:4px;top:3px;font-style:normal;font-size:9px;color:#7f8e9e}
+#palette{display:grid;grid-template-columns:repeat(auto-fill,minmax(116px,1fr));gap:5px}
+.mat{display:flex;gap:6px;align-items:center;text-align:left;font-size:11px;padding:4px;
+ white-space:normal;overflow-wrap:anywhere;line-height:1.2;min-width:0}
+.mat span:last-child{min-width:0}
+.sw{width:24px;height:24px;flex:none;border:1px solid #0008;border-radius:3px;image-rendering:pixelated}
+.search{width:100%;margin-bottom:6px}
+.chips{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px}
+.chip{font-size:10.5px;padding:3px 7px;border-radius:11px;background:#1d2530;border:1px solid #3a4756;cursor:pointer}
+.chip.on{background:#477d38;border-color:var(--acc)}
+.small{font-size:11px;color:var(--mut);line-height:1.45}
+.row{display:flex;flex-wrap:wrap;gap:5px;margin:5px 0;align-items:center}.row>*{min-width:0}.row>*{flex:1}.row>.fixed{flex:none}
+label.inline{display:flex;align-items:center;gap:6px;font-size:11.5px;color:#c3ccd6;cursor:pointer}
+label.stk{display:block;font-size:10.5px;color:var(--mut)}label.stk select,label.stk input{width:100%;max-width:100%;margin-top:2px}
+main{position:relative;overflow:hidden;background:#090d12;min-width:0}
+#viewport{position:absolute;inset:0;overflow:auto;padding:34px}
+#board{position:relative;width:max-content;box-shadow:0 0 0 1px #465467}
+canvas{display:block;image-rendering:pixelated;background:#18202a}
+#grid{touch-action:none;cursor:crosshair}
+#labels{position:absolute;inset:0;pointer-events:none}
+.label{position:absolute;color:#fff;font-weight:800;text-shadow:0 1px 3px #000;background:#0008;padding:2px 5px;border-radius:3px;white-space:nowrap;pointer-events:auto;cursor:move;font-size:12px}
+.label.auto{background:#0b3a5a99;font-weight:600}
+#status{position:absolute;bottom:10px;left:10px;background:#111c;padding:6px 9px;border-radius:5px;pointer-events:none;font-variant-numeric:tabular-nums}
+#updbar{position:fixed;left:0;right:0;bottom:0;z-index:9998;display:none;gap:12px;align-items:center;
+ background:#1d3a17f5;border-top:1px solid var(--acc);padding:10px 16px;box-shadow:0 -4px 18px #0007}
+#updbar b{color:#bff29a}#updbar .spacer{flex:1}
+#toast{position:absolute;top:12px;left:50%;transform:translateX(-50%);background:#1d3a17ee;border:1px solid var(--acc);padding:7px 14px;border-radius:7px;font-weight:600;display:none;pointer-events:none;z-index:50}
+#buildbar{position:absolute;top:0;left:0;right:0;background:#0f1720ee;border-bottom:1px solid var(--acc);padding:8px 12px;display:none;align-items:center;gap:10px;z-index:40}
+#buildbar b{color:var(--acc)}
+#hoverTip{position:fixed;z-index:9999;display:none;transform:translate(-50%,-100%);background:#0b1118f2;color:#fff;border:1px solid #596a7e;border-radius:6px;padding:5px 8px;font-weight:700;font-size:12px;white-space:nowrap;pointer-events:none;box-shadow:0 3px 10px #0008}
+.floorbar{display:flex;flex-wrap:wrap;gap:4px}.floor{font-size:11.5px;padding:5px 8px}.floor.active{background:#477d38;outline:1px solid var(--acc)}
+.stat{display:flex;justify-content:space-between;gap:8px;border-bottom:1px solid #2b3542;padding:4px 0;font-size:11.5px}
+.stat .sw{width:13px;height:13px;border-radius:2px}
+dialog{background:#171d25;color:#fff;border:1px solid #435166;border-radius:10px;min-width:380px;max-width:94vw;max-height:88vh;padding:18px}
+dialog::backdrop{background:#000b}dialog h2{margin:0 0 12px;font-size:17px}
+.projects button{width:100%;margin:0;text-align:left}
+.pcard{display:flex;gap:9px;align-items:center;background:#1c242e;border:1px solid #33404f;border-radius:7px;padding:7px;margin:6px 0}
+.pcard canvas{width:66px;height:50px;border-radius:4px;border:1px solid #3a4756;background:#10161d;flex:none}
+.pcard .meta{flex:1;min-width:0}.pcard .meta b{display:block}.pcard .meta span{color:var(--mut);font-size:11px}
+kbd{background:#303a47;border:1px solid #566477;border-radius:3px;padding:1px 4px;font-size:10.5px}
+.shoplist{max-height:52vh;overflow:auto;border:1px solid #33404f;border-radius:7px;padding:4px 10px}
+.shopitem{display:flex;gap:9px;align-items:center;padding:5px 0;border-bottom:1px solid #262f3a}
+.shopitem input{flex:none;width:16px;height:16px}
+.shopitem .n{flex:1}.shopitem .q{color:var(--mut);font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+.shopitem.done .n{text-decoration:line-through;opacity:.45}
+textarea#cmds{width:100%;height:46vh;font:11.5px ui-monospace,Consolas,monospace;resize:vertical;white-space:pre}
+.stamps{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px}
+.stamp{display:flex;flex-direction:column;gap:5px;align-items:center;padding:7px 4px;font-size:10.5px;line-height:1.2;text-align:center}
+.stamp canvas{width:56px;height:56px;image-rendering:pixelated;border:1px solid #3a4756;border-radius:4px}
+.themes{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.theme{display:flex;flex-direction:column;gap:5px;align-items:flex-start;padding:7px;font-size:11px}
+.theme .sws{display:flex;gap:3px}.theme .sws span{width:15px;height:15px;border-radius:3px;border:1px solid #0006}
+@media print{body{overflow:visible;height:auto}header,.app,#hoverTip{display:none!important}dialog{position:static;display:block;border:0;max-height:none;color:#000;background:#fff}}
+@media (max-width:1180px){.app{--lw:250px;--rw:232px}}
+@media (max-width:900px){.app{--lw:210px;--rw:200px}}
+@media (max-width:640px){.app{grid-template-columns:var(--lw,190px) 6px minmax(0,1fr);--lw:190px}.right,.resizer[data-side=r]{display:none}}
+</style></head><body>
+<header>
+<div class="logo" id="logo" title="">⛏ Mine<b>Plan V3.6</b></div>
+<input id="name" value="My Minecraft Build" aria-label="Project name">
+<button id="projects" title="Open the project library">Projects</button>
+<button id="save" class="primary" title="Save to a file (Ctrl+S)">Save</button>
+<button id="saveAs" title="Save to a new file">Save As…</button>
+<label class="file" title="Open a .mineplan.json file">Import<input id="import" type="file" accept=".json" hidden></label>
+<button id="undo" title="Undo (Ctrl+Z)">↶</button><button id="redo" title="Redo (Ctrl+Y)">↷</button>
+<button id="mode" title="Toggle blueprint view (V)">Blueprint</button>
+<button id="preview3d" title="Isometric 3D preview (P)">3D Preview</button>
+<button id="shopBtn" title="Material shopping list">Shopping List</button>
+<button id="buildBtn" title="Step-by-step build order (B)">Build Mode</button>
+<button id="cmdBtn" title="Export /fill commands">/fill</button>
+<button id="shareBtn" title="Copy a shareable link">Share Link</button>
+<button id="png" title="Export a PNG image">PNG</button>
+<div class="spacer"></div><span id="saved" class="small"></span>
+</header>
+<div class="app">
+
+<aside class="left">
+ <div class="sec"><h3>Floors <span class="hint">shift+click to duplicate</span></h3>
+  <div id="floors" class="floorbar"></div>
+  <div class="row"><button id="addFloor">+ Floor</button><button id="dupFloor">Duplicate</button><button id="renameFloor">Rename</button><button id="delFloor" class="danger">Delete</button></div>
+  <label class="inline"><input type="checkbox" id="ghost"> Ghost the floor below</label>
+  <label class="stk">Floor height in the 3D preview (blocks)<input id="floorHeight" type="number" min="1" max="24" value="4"></label>
+ </div>
+
+ <div class="sec"><h3>Tools <span class="hint">1–9, 0</span></h3><div class="tools">
+  <button class="tool active" data-t="pencil">✎ Block<i>1</i></button>
+  <button class="tool" data-t="erase">⌫ Erase<i>2</i></button>
+  <button class="tool" data-t="wall">╱ Wall<i>3</i></button>
+  <button class="tool" data-t="room">▣ Room<i>4</i></button>
+  <button class="tool" data-t="fill">▦ Fill<i>5</i></button>
+  <button class="tool" data-t="object">♜ Object<i>6</i></button>
+  <button class="tool" data-t="label">T Label<i>7</i></button>
+  <button class="tool" data-t="select">□ Copy<i>8</i></button>
+  <button class="tool" data-t="window">▥ Window<i>9</i></button>
+  <button class="tool" data-t="move">✥ Move<i>0</i></button>
+  <button class="tool" data-t="height">⇕ Height<i>H</i></button>
+  <button class="tool" data-t="redstone">⚡ Redstone<i>R</i></button>
+ </div>
+ <p class="small" style="margin:8px 0 0"><b>Right-click</b> an object to rotate it, or empty space to turn the next one. <kbd>Esc</kbd> cancels. <kbd>Alt</kbd>+click picks up whatever is under the cursor.</p></div>
+
+ <div class="sec"><h3>Block height <span class="hint">makes the 3D real</span></h3>
+  <div class="row"><input id="curH" type="range" min="1" max="12" value="1"><b id="curHv" class="fixed" style="width:54px;text-align:right">1 tall</b></div>
+  <p class="small">New blocks are placed this tall. The <b>Height</b> tool paints this value onto blocks you already placed (shift+click to lower).</p>
+  <label class="inline"><input type="checkbox" id="showH" checked> Show height numbers on the grid</label>
+ </div>
+
+ <div class="sec"><h3>Symmetry</h3>
+  <div class="chips" id="symChips">
+   <span class="chip on" data-s="none">Off</span><span class="chip" data-s="x">Mirror ←→</span>
+   <span class="chip" data-s="z">Mirror ↑↓</span><span class="chip" data-s="xz">Both</span><span class="chip" data-s="quad">4-way</span>
+  </div><p class="small">Draw once, get a perfectly symmetrical castle.</p></div>
+
+ <div class="sec"><h3>Room materials</h3><div class="grid2">
+  <label class="stk">Walls<select id="wallMat"></select></label>
+  <label class="stk">Floor<select id="floorMat"></select></label></div>
+  <label class="inline" style="margin-top:6px"><input type="checkbox" id="autoLabel" checked> Auto-label rooms with their size</label>
+ </div>
+
+ <div class="sec"><h3>Blocks &amp; furniture</h3>
+  <input id="search" class="search" placeholder="Search blocks, doors, furniture…" aria-label="Search materials">
+  <div class="chips" id="catChips"></div>
+  <div id="palette"></div></div>
+</aside>
+
+<div class="resizer" data-side="l" title="Drag to resize · double-click to reset"></div>
+
+<main>
+ <div id="viewport"><div id="board"><canvas id="grid"></canvas><div id="labels"></div></div></div>
+ <div id="buildbar"><b id="buildLabel">Step 1</b><span class="spacer" style="flex:1"></span>
+  <button id="bPrev">◀ Back</button><button id="bNext" class="primary">Next ▶</button><button id="bExit">Exit build mode</button></div>
+ <div id="status">Ready</div><div id="toast"></div>
+</main>
+
+<div class="resizer" data-side="r" title="Drag to resize · double-click to reset"></div>
+
+<aside class="right">
+ <div class="sec"><h3>Grid</h3><div class="grid2">
+  <label class="stk">Width (X)<input id="gw" type="number" min="8" max="128" value="40"></label>
+  <label class="stk">Depth (Z)<input id="gh" type="number" min="8" max="128" value="30"></label></div>
+  <div class="row"><button id="resize">Resize</button><button id="zoomOut" class="narrow">−</button><button id="zoomIn" class="narrow">+</button><button id="zoomFit" class="narrow">Fit</button></div>
+  <label class="inline"><input type="checkbox" id="chunks"> Show 16×16 chunk grid</label>
+  <label class="inline"><input type="checkbox" id="lightOv"> Mob-spawn light overlay</label>
+  <label class="inline"><input type="checkbox" id="rsOv" checked> Show redstone layer</label>
+ </div>
+
+ <div class="sec"><h3>World coordinates</h3><div class="grid3">
+  <label class="stk">X<input id="ox" type="number" value="0"></label>
+  <label class="stk">Y<input id="oy" type="number" value="64"></label>
+  <label class="stk">Z<input id="oz" type="number" value="0"></label></div>
+  <p class="small">Where the top-left corner sits in your world. Used by the status bar and the /fill export.</p></div>
+
+ <div class="sec"><h3>Selection</h3><div id="selection"></div>
+  <div class="row"><button id="rotate">↻ Rotate</button><button id="paste">Paste</button><button id="stampsBtn">Stamps</button></div>
+  <div class="row"><button id="themeBtn">Palette Themes</button></div></div>
+
+ <div class="sec"><h3>Material count</h3>
+  <select id="countScope"><option value="floor">Current floor</option><option value="all">Whole build</option></select>
+  <div id="counts" style="margin-top:6px"></div></div>
+
+ <div class="sec"><h3>Labels</h3><div id="labelList"></div></div>
+
+ <div class="sec"><h3>Notes</h3><textarea id="notes" rows="5" placeholder="Main entrance faces north…"></textarea></div>
+
+ <div class="sec"><h3>Shortcuts</h3><div class="small">
+  <kbd>Ctrl</kbd>+<kbd>Z</kbd> undo · <kbd>Ctrl</kbd>+<kbd>Y</kbd> redo · <kbd>Ctrl</kbd>+<kbd>S</kbd> save<br>
+  <kbd>Ctrl</kbd>+wheel zoom · <kbd>1</kbd>–<kbd>0</kbd> tools · <kbd>[</kbd> <kbd>]</kbd> floor<br>
+  <kbd>Esc</kbd> cancel · right-click rotate · <kbd>Alt</kbd>+click eyedropper</div></div>
+</aside></div>
+
+<dialog id="projectDialog"><h2>Project Library</h2><div id="projectList" class="projects"></div>
+ <div class="row"><button id="newProject">+ New Project</button><button id="closeProjects">Close</button></div></dialog>
+
+<dialog id="previewDialog" style="width:min(940px,94vw)"><h2>Isometric Build Preview</h2>
+ <canvas id="iso" width="880" height="560" style="width:100%;background:#10161d;border:1px solid #435166;border-radius:6px"></canvas>
+ <div class="row" style="margin-top:10px"><button id="isoRot">↻ Rotate view</button><button id="isoPng">Save as PNG</button><span class="spacer"></span><button id="closePreview">Close</button></div>
+ <p class="small">Built from the block heights you set. Blocks with a height of 1 are floors; taller ones become walls and towers.</p></dialog>
+
+<dialog id="shopDialog" style="width:min(560px,94vw)"><h2>Shopping List</h2>
+ <div class="row"><select id="shopScope"><option value="all">Whole build</option><option value="floor">Current floor</option></select>
+  <label class="inline fixed"><input type="checkbox" id="shopStacks" checked> Show stacks</label></div>
+ <div id="shopList" class="shoplist"></div>
+ <div class="row" style="margin-top:10px"><button id="shopPrint">Print checklist</button><span class="spacer"></span><button id="closeShop">Close</button></div></dialog>
+
+<dialog id="cmdDialog" style="width:min(760px,94vw)"><h2>/fill commands</h2>
+ <p class="small">Paste these into a command block or chat, standing anywhere. They build from the world coordinates on the right-hand panel. Run them in order — floors build bottom to top.</p>
+ <textarea id="cmds" readonly></textarea>
+ <div class="row" style="margin-top:8px"><button id="copyCmds" class="primary">Copy all</button><button id="dlCmds">Download .mcfunction</button><span class="spacer"></span><button id="closeCmds">Close</button></div></dialog>
+
+<dialog id="stampDialog" style="width:min(680px,94vw)"><h2>Stamps</h2>
+ <p class="small">Pick one, then click on the grid to place it. It follows your cursor first so you can line it up.</p>
+ <div id="stampList" class="stamps" style="margin-top:10px"></div>
+ <div class="row" style="margin-top:12px"><span class="spacer"></span><button id="closeStamps">Close</button></div></dialog>
+
+<dialog id="themeDialog" style="width:min(560px,94vw)"><h2>Palette Themes</h2>
+ <p class="small">Sets your wall and floor materials. <b>Re-skin</b> also swaps every block already placed to the matching material in that theme.</p>
+ <div id="themeList" class="themes" style="margin-top:10px"></div>
+ <div class="row" style="margin-top:12px"><span class="spacer"></span><button id="closeThemes">Close</button></div></dialog>
+
+<dialog id="rsDialog" style="width:min(520px,94vw)"><h2>Redstone parts</h2>
+ <div id="rsPalette" class="stamps" style="grid-template-columns:1fr 1fr 1fr 1fr"></div>
+ <div class="row" style="margin-top:12px"><span class="spacer"></span><button id="closeRs">Close</button></div></dialog>
+
+<div id="updbar">
+ <b>A newer version of MinePlan is ready.</b>
+ <span class="small" id="updNote" style="color:#cfe6c0"></span>
+ <span class="spacer"></span>
+ <button id="updNow" class="primary">Save &amp; reload</button>
+ <button id="updLater">Not now</button>
+</div>
+<div id="hoverTip"></div>
+<script>
+"use strict";
+const BUILD=document.querySelector('meta[name="mineplan-build"]')?.content||"dev";
+/* ---------- material table ---------- */
+const C=[
+["Oak Planks","#b88752","wood"],["Spruce Planks","#6f4d2c","wood"],["Birch Planks","#d6c48b","wood"],["Jungle Planks","#a8794d","wood"],["Acacia Planks","#b5653e","wood"],["Dark Oak Planks","#49321f","wood"],["Mangrove Planks","#763b36","wood"],["Cherry Planks","#d28f89","wood"],["Bamboo Planks","#c5b65c","wood"],["Pale Oak Planks","#d7d3c4","wood"],["Crimson Planks","#7d3048","nether wood"],["Warped Planks","#2c7773","nether wood"],
+["Oak Log","#6b542f","wood"],["Spruce Log","#3f2f20","wood"],["Birch Log","#d7d0a3","wood"],["Jungle Log","#765b31","wood"],["Acacia Log","#67615b","wood"],["Dark Oak Log","#33271d","wood"],["Mangrove Log","#55342f","wood"],["Cherry Log","#4f342f","wood"],["Pale Oak Log","#aaa99f","wood"],["Crimson Stem","#5a263c","nether wood"],["Warped Stem","#356c68","nether wood"],
+["Stripped Oak Log","#b28a58","wood"],["Stripped Spruce Log","#725237","wood"],["Stripped Birch Log","#c9b47a","wood"],["Stripped Jungle Log","#ad7c4c","wood"],["Stripped Acacia Log","#ad6548","wood"],["Stripped Dark Oak Log","#5b432f","wood"],["Stripped Mangrove Log","#7b4a42","wood"],["Stripped Cherry Log","#c47f75","wood"],["Stripped Pale Oak Log","#c7c1ad","wood"],
+["Stone","#777b80","stone"],["Cobblestone","#686b69","stone"],["Stone Bricks","#77736e","stone"],["Mossy Stone Bricks","#68765a","stone"],["Granite","#956b5b","stone"],["Polished Granite","#9d6f60","stone"],["Diorite","#b8b8b4","stone"],["Polished Diorite","#c8c8c5","stone"],["Andesite","#8a8b89","stone"],["Polished Andesite","#999a98","stone"],["Deepslate","#4a4a4f","stone"],["Cobbled Deepslate","#45464a","stone"],["Deepslate Bricks","#34373d","stone"],["Deepslate Tiles","#303238","stone"],["Tuff","#686e69","stone"],["Tuff Bricks","#626861","stone"],["Calcite","#d6d2c7","stone"],["Dripstone Block","#866452","stone"],["Bricks","#995347","stone"],["Mud Bricks","#8a6952","stone"],["Sandstone","#d7c28a","stone"],["Red Sandstone","#a45e32","stone"],["Prismarine","#639b91","stone"],["Prismarine Bricks","#5fa49b","stone"],["Dark Prismarine","#315e58","stone"],["Quartz Block","#e6e1d8","stone"],["Smooth Quartz","#eee9e0","stone"],["Purpur Block","#a46da7","stone"],["End Stone","#d9d6a0","stone"],
+["Netherrack","#6e3634","nether"],["Nether Bricks","#351b21","nether"],["Red Nether Bricks","#6c2024","nether"],["Basalt","#4b4a4d","nether"],["Polished Basalt","#5b5a5d","nether"],["Blackstone","#29282e","nether"],["Polished Blackstone","#36353b","nether"],["Soul Sand","#554238","nether"],["Soul Soil","#4b392f","nether"],["Magma Block","#8d3d22","nether"],
+["White Concrete","#d9dfe0","concrete"],["Light Gray Concrete","#7d8386","concrete"],["Gray Concrete","#51565b","concrete"],["Black Concrete","#17191c","concrete"],["Brown Concrete","#603b2b","concrete"],["Red Concrete","#9c292d","concrete"],["Orange Concrete","#df6d18","concrete"],["Yellow Concrete","#e7bd24","concrete"],["Lime Concrete","#5ea92f","concrete"],["Green Concrete","#4d6f38","concrete"],["Cyan Concrete","#16858c","concrete"],["Light Blue Concrete","#4aa7c8","concrete"],["Blue Concrete","#3457a0","concrete"],["Purple Concrete","#642f91","concrete"],["Magenta Concrete","#a9309d","concrete"],["Pink Concrete","#d76889","concrete"],
+["Glass","#9bcbd0","glass"],["Glass Pane","#b8e1e3","glass"],["Tinted Glass","#354047","glass"],["White Stained Glass","#d8e2df","glass"],["Black Stained Glass","#292d31","glass"],["Red Stained Glass","#a43a3a","glass"],["Blue Stained Glass","#4567a8","glass"],["Green Stained Glass","#527842","glass"],
+["Oak Door","#9a6739","door"],["Spruce Door","#60452e","door"],["Birch Door","#d3bd79","door"],["Jungle Door","#9b6a42","door"],["Acacia Door","#a95d3d","door"],["Dark Oak Door","#49321f","door"],["Mangrove Door","#713832","door"],["Cherry Door","#ca827c","door"],["Bamboo Door","#b7a847","door"],["Pale Oak Door","#c9c5b7","door"],["Crimson Door","#743048","door"],["Warped Door","#2e716d","door"],["Iron Door","#b9c0c4","door"],
+["Oak Trapdoor","#855a32","door"],["Spruce Trapdoor","#60452e","door"],["Birch Trapdoor","#cdb777","door"],["Jungle Trapdoor","#93643f","door"],["Acacia Trapdoor","#a45b3d","door"],["Dark Oak Trapdoor","#45301f","door"],["Mangrove Trapdoor","#6d3934","door"],["Cherry Trapdoor","#c27d76","door"],["Bamboo Trapdoor","#b2a348","door"],["Pale Oak Trapdoor","#c5c1b4","door"],["Crimson Trapdoor","#713048","door"],["Warped Trapdoor","#2e706c","door"],
+["Oak Stairs","#a87946","stairs"],["Spruce Stairs","#6f4d2c","stairs"],["Birch Stairs","#d6c48b","stairs"],["Jungle Stairs","#a8794d","stairs"],["Acacia Stairs","#b5653e","stairs"],["Dark Oak Stairs","#49321f","stairs"],["Mangrove Stairs","#763b36","stairs"],["Cherry Stairs","#d28f89","stairs"],["Bamboo Stairs","#c5b65c","stairs"],["Pale Oak Stairs","#d7d3c4","stairs"],["Crimson Stairs","#7d3048","stairs"],["Warped Stairs","#2c7773","stairs"],["Stone Stairs","#777b80","stairs"],["Stone Brick Stairs","#77736e","stairs"],["Deepslate Brick Stairs","#34373d","stairs"],["Quartz Stairs","#e6e1d8","stairs"],["Ladder","#ba914e","access"],
+["Oak Slab","#b88752","slab"],["Spruce Slab","#6f4d2c","slab"],["Birch Slab","#d6c48b","slab"],["Jungle Slab","#a8794d","slab"],["Acacia Slab","#b5653e","slab"],["Dark Oak Slab","#49321f","slab"],["Mangrove Slab","#763b36","slab"],["Cherry Slab","#d28f89","slab"],["Bamboo Slab","#c5b65c","slab"],["Pale Oak Slab","#d7d3c4","slab"],["Crimson Slab","#7d3048","slab"],["Warped Slab","#2c7773","slab"],
+["Chest","#a66a21","furniture"],["Trapped Chest","#9a5c20","furniture"],["Ender Chest","#233b3b","furniture"],["Barrel","#74502e","furniture"],["Crafting Table","#79512f","furniture"],["Furnace","#55595c","furniture"],["Blast Furnace","#4e5357","furniture"],["Smoker","#5c5142","furniture"],["Stonecutter","#777b80","furniture"],["Loom","#a68b61","furniture"],["Cartography Table","#715a43","furniture"],["Fletching Table","#b99c64","furniture"],["Smithing Table","#3e4c4f","furniture"],["Grindstone","#77746d","furniture"],["Bookshelf","#85613c","furniture"],["Chiseled Bookshelf","#9a7046","furniture"],["Lectern","#8c663d","furniture"],["Red Bed","#c94b4b","furniture"],["Blue Bed","#496eb2","furniture"],["White Bed","#e7e7e2","furniture"],["Anvil","#45494b","furniture"],["Enchanting Table","#573c58","furniture"],["Brewing Stand","#9b8955","furniture"],["Cauldron","#4b5154","furniture"],
+["Lantern","#d6a43b","light"],["Soul Lantern","#49a9a5","light"],["Torch","#e2a947","light"],["Soul Torch","#56b9b2","light"],["Sea Lantern","#a8d5c8","light"],["Glowstone","#c59b57","light"],["Shroomlight","#e58c56","light"],["Froglight","#d9d58e","light"],["Redstone Lamp","#795333","light"],
+["Red Carpet","#b54343","decor"],["White Carpet","#deded9","decor"],["Flower Pot","#985441","decor"],["Painting","#b7864e","decor"],["Item Frame","#8d6038","decor"],["Armor Stand","#9a7b4c","decor"],
+["Oak Fence","#8c6038","outside"],["Spruce Fence","#65472e","outside"],["Birch Fence","#cdbb7d","outside"],["Jungle Fence","#986842","outside"],["Acacia Fence","#aa6040","outside"],["Dark Oak Fence","#46311f","outside"],["Mangrove Fence","#703a35","outside"],["Cherry Fence","#c9827b","outside"],["Bamboo Fence","#b5a64a","outside"],["Pale Oak Fence","#cac6b8","outside"],["Crimson Fence","#733047","outside"],["Warped Fence","#2d706c","outside"],["Fence Gate","#8c6038","outside"],
+["Grass Block","#588d46","natural"],["Dirt","#79563c","natural"],["Coarse Dirt","#72513b","natural"],["Podzol","#5b422f","natural"],["Mud","#4d4a4a","natural"],["Sand","#d8ca8c","natural"],["Red Sand","#bd6b35","natural"],["Gravel","#77736f","natural"],["Clay","#9aa5b1","natural"],["Snow Block","#eef4f5","natural"],["Ice","#8db9dc","natural"],["Packed Ice","#75a6cf","natural"],["Blue Ice","#6f9ee5","natural"],["Leaves","#40733b","natural"],["Water","#3974c4","fluid"],["Lava","#f36b16","fluid"],
+["Copper Block","#b66c4e","copper"],["Exposed Copper","#a56f55","copper"],["Weathered Copper","#6d8c76","copper"],["Oxidized Copper","#4d8f7b","copper"],["Cut Copper","#b66c4e","copper"],["Copper Grate","#a86b51","copper"],["Copper Bulb","#a66c4c","copper"],
+["Iron Block","#d5d9d8","metal"],["Gold Block","#f2d13c","metal"],["Diamond Block","#55c9c1","metal"],["Emerald Block","#45b86d","metal"],["Lapis Block","#3457a3","metal"],["Redstone Block","#ad1d19","redstone"],["Obsidian","#2e223f","special"],["Crying Obsidian","#49316c","special"],["Sculk","#15383d","special"],["Sculk Catalyst","#214b50","special"],["Sculk Shrieker","#304c4c","special"]
+];
+
+
+/* extra blocks added in V3.6 (appended so older files keep their indices) */
+C.push(
+ ["Campfire","#8a5a30","light"],["Soul Campfire","#3f8f8b","light"],["Chain","#4a4e57","decor"],
+ ["Iron Bars","#9aa1a6","decor"],["Scaffolding","#c2a057","access"],["Composter","#6f5433","furniture"],
+ ["Beehive","#b58a4a","furniture"],["Bell","#d7b54a","decor"],["Jukebox","#66452c","furniture"],
+ ["Oak Sign","#b08a55","decor"],["Cobweb","#d9dee2","decor"],["Moss Block","#5a7238","natural"],
+ ["Azalea Leaves","#5b7a3a","natural"],["Flowering Azalea","#7d8f46","natural"],["Amethyst Block","#8564b8","special"],
+ ["Honeycomb Block","#e0932c","decor"],["Bone Block","#ddd9c6","natural"],["Hay Block","#c8a01c","natural"],
+ ["Pumpkin","#c07617","natural"],["Jack o Lantern","#d08b22","light"],["Melon","#7a9a2e","natural"],
+ ["Sea Pickle","#5c6f36","light"],["Cake","#e4ddd6","furniture"],["Bamboo Mosaic","#c5b65c","wood"],
+ ["Mud Brick Stairs","#8a6952","stairs"],["Cut Copper Stairs","#b66c4e","stairs"],["Sandstone Stairs","#d7c28a","stairs"]
+);
+
+/* ---------- redstone parts (separate overlay layer) ---------- */
+const RS=[
+ ["Redstone Dust","#c02a20","dust"],["Redstone Torch","#d4352a","torch"],["Repeater","#c3bdb6","arrow"],
+ ["Comparator","#c9c3bc","arrow"],["Observer","#4a4a4f","arrow"],["Piston","#9c7f52","arrow"],
+ ["Sticky Piston","#6f8f4e","arrow"],["Lever","#8a7350","dot"],["Stone Button","#7b7f84","dot"],
+ ["Pressure Plate","#8d9196","plate"],["Tripwire Hook","#a08a63","dot"],["Hopper","#3c4145","arrow"],
+ ["Dropper","#5c6165","arrow"],["Dispenser","#5c6165","arrow"],["Note Block","#6b4a2c","dot"],
+ ["Target","#cf6d55","dot"],["Redstone Lamp","#795333","dot"],["Daylight Detector","#9b8259","plate"],
+ ["TNT","#c6402f","dot"],["Rail","#9a8a72","arrow"],["Powered Rail","#c08a3a","arrow"]
+];
+
+/* ---------- Minecraft block ids for /fill export ---------- */
+const ID_OVERRIDE={"Leaves":"oak_leaves","Froglight":"ochre_froglight","Fence Gate":"oak_fence_gate",
+ "Glass Pane":"glass_pane","Stone Stairs":"cobblestone_stairs","Painting":null,"Item Frame":null,
+ "Armor Stand":null,"Flower Pot":"flower_pot","Copper Grate":"copper_grate","Copper Bulb":"copper_bulb",
+ "Cut Copper":"cut_copper","Trapped Chest":"trapped_chest","Repeater":"repeater","Comparator":"comparator",
+ "Redstone Dust":"redstone_wire","Pressure Plate":"stone_pressure_plate","Rail":"rail","Powered Rail":"powered_rail",
+ "Piston":"piston","Sticky Piston":"sticky_piston","Lever":"lever","Stone Button":"stone_button",
+ "Tripwire Hook":"tripwire_hook","Note Block":"note_block","Daylight Detector":"daylight_detector"};
+function mcid(name){let id=ID_OVERRIDE[name];if(id===null)return null;if(id)return id.includes(":")?id:"minecraft:"+id;
+ return "minecraft:"+name.toLowerCase().replace(/[^a-z0-9]+/g,"_").replace(/^_|_$/g,"");}
+
+/* ---------- light emitters ---------- */
+const LIGHT={"Torch":14,"Soul Torch":10,"Lantern":15,"Soul Lantern":10,"Sea Lantern":15,"Glowstone":15,
+ "Shroomlight":15,"Froglight":15,"Redstone Lamp":15,"Magma Block":3,"Campfire":15,"Lava":15,"Crying Obsidian":10};
+/* categories that do NOT block light travel */
+const TRANSPARENT=new Set(["glass","light","decor","door","slab","fluid","access"]);
+
+/* ---------- palette themes ---------- */
+const THEMES=[
+ {n:"Medieval Oak",sw:["#b88752","#77736e","#49321f","#9bcbd0"],
+  wall:"Stone Bricks",floor:"Oak Planks",
+  map:{wood:"Oak Planks",stone:"Stone Bricks",concrete:"Stone Bricks",glass:"Glass Pane",nether:"Cobblestone",natural:"Grass Block",copper:"Oak Log",metal:"Iron Block"}},
+ {n:"Dark Fortress",sw:["#34373d","#49321f","#29282e","#354047"],
+  wall:"Deepslate Bricks",floor:"Dark Oak Planks",
+  map:{wood:"Dark Oak Planks",stone:"Deepslate Bricks",concrete:"Black Concrete",glass:"Tinted Glass",nether:"Blackstone",natural:"Podzol",copper:"Dark Oak Log",metal:"Iron Block"}},
+ {n:"Nether Base",sw:["#351b21","#6e3634","#8d3d22","#7d3048"],
+  wall:"Nether Bricks",floor:"Crimson Planks",
+  map:{wood:"Crimson Planks",stone:"Nether Bricks",concrete:"Red Nether Bricks",glass:"Red Stained Glass",nether:"Netherrack",natural:"Soul Soil",copper:"Crimson Stem",metal:"Gold Block"}},
+ {n:"End Temple",sw:["#d9d6a0","#a46da7","#2e223f","#e6e1d8"],
+  wall:"End Stone",floor:"Purpur Block",
+  map:{wood:"Purpur Block",stone:"End Stone",concrete:"Quartz Block",glass:"Glass Pane",nether:"Obsidian",natural:"End Stone",copper:"Purpur Block",metal:"Quartz Block"}},
+ {n:"Modern Glass",sw:["#d9dfe0","#17191c","#9bcbd0","#7d8386"],
+  wall:"White Concrete",floor:"Smooth Quartz",
+  map:{wood:"White Concrete",stone:"Light Gray Concrete",concrete:"White Concrete",glass:"Glass Pane",nether:"Black Concrete",natural:"Gray Concrete",copper:"Iron Block",metal:"Iron Block"}},
+ {n:"Cherry Cottage",sw:["#d28f89","#d6c48b","#995347","#588d46"],
+  wall:"Bricks",floor:"Cherry Planks",
+  map:{wood:"Cherry Planks",stone:"Bricks",concrete:"Pink Concrete",glass:"Glass Pane",nether:"Bricks",natural:"Grass Block",copper:"Cherry Log",metal:"Copper Block"}},
+ {n:"Frozen Keep",sw:["#8db9dc","#eef4f5","#c8c8c5","#d6d2c7"],
+  wall:"Packed Ice",floor:"Snow Block",
+  map:{wood:"Spruce Planks",stone:"Polished Diorite",concrete:"White Concrete",glass:"Glass Pane",nether:"Blue Ice",natural:"Snow Block",copper:"Spruce Log",metal:"Iron Block"}},
+ {n:"Desert Outpost",sw:["#d7c28a","#a45e32","#d8ca8c","#b5653e"],
+  wall:"Sandstone",floor:"Smooth Quartz",
+  map:{wood:"Acacia Planks",stone:"Sandstone",concrete:"Red Sandstone",glass:"Glass Pane",nether:"Red Sandstone",natural:"Sand",copper:"Acacia Log",metal:"Gold Block"}}
+];
+
+/* ---------- stamps: little pre-built rooms ---------- */
+const STAMPS=[
+ {n:"Bedroom",d:"7×5 · bed, chest, light",
+  key:{"#":"Spruce Planks",".":"Oak Planks","D":"Spruce Planks"},h:{"#":3,"D":3},
+  g:["#######","#.....#","#.....#","#.....#","###D###"],
+  o:[{x:1,y:1,n:"Red Bed",r:2},{x:5,y:1,n:"Chest"},{x:5,y:3,n:"Crafting Table"},{x:3,y:1,n:"Lantern"},{x:3,y:4,n:"Spruce Door"}]},
+
+ {n:"Storage Room",d:"9×7 · chests & barrels",
+  key:{"#":"Stone Bricks",".":"Oak Planks","D":"Stone Bricks"},h:{"#":3,"D":3},
+  g:["#########","#.......#","#.......#","#.......#","#.......#","#.......#","####D####"],
+  o:[{x:1,y:1,n:"Chest"},{x:2,y:1,n:"Chest"},{x:3,y:1,n:"Chest"},{x:5,y:1,n:"Barrel"},{x:6,y:1,n:"Barrel"},{x:7,y:1,n:"Barrel"},
+     {x:1,y:3,n:"Chest"},{x:7,y:3,n:"Barrel"},{x:1,y:5,n:"Chest"},{x:7,y:5,n:"Barrel"},{x:4,y:2,n:"Lantern"},{x:4,y:6,n:"Oak Door"}]},
+
+ {n:"Kitchen",d:"7×5 · furnaces & smoker",
+  key:{"#":"Bricks",".":"Stone Bricks","D":"Bricks"},h:{"#":3,"D":3},
+  g:["#######","#.....#","#.....#","#.....#","###D###"],
+  o:[{x:1,y:1,n:"Furnace"},{x:2,y:1,n:"Smoker"},{x:3,y:1,n:"Blast Furnace"},{x:5,y:1,n:"Crafting Table"},
+     {x:5,y:3,n:"Barrel"},{x:1,y:3,n:"Cauldron"},{x:3,y:2,n:"Lantern"},{x:3,y:4,n:"Oak Door"}]},
+
+ {n:"9×9 Farm",d:"fenced, water in the middle",
+  key:{"F":"Oak Fence",".":"Dirt","W":"Water"},h:{"F":2},
+  g:["FFFFFFFFF","F.......F","F.......F","F.......F","F...W...F","F.......F","F.......F","F.......F","FFFFFFFFF"],
+  o:[{x:4,y:0,n:"Fence Gate"}]},
+
+ {n:"Watchtower",d:"5×5 · 10 blocks tall",
+  key:{"#":"Cobblestone",".":"Stone","D":"Cobblestone"},h:{"#":10,"D":10},
+  g:["#####","#...#","#...#","#...#","##D##"],
+  o:[{x:1,y:1,n:"Ladder"},{x:3,y:1,n:"Lantern"},{x:2,y:4,n:"Oak Door"}]},
+
+ {n:"Spiral Stairs",d:"5×5 · climbs 12 blocks",
+  key:{"S":"Oak Stairs",".":null},
+  h:{},hg:["12345","c...6","c...7","c...8","ccba9"],
+  g:["SSSSS","S...S","S...S","S...S","SSSSS"],o:[]},
+
+ {n:"Portal Room",d:"6×5 · correct 4×5 frame",
+  key:{"#":"Blackstone",".":"Polished Blackstone","O":"Obsidian","D":"Blackstone"},h:{"#":5,"O":5,"D":5},
+  g:["######","#OOOO#","#....#","#....#","##DD##"],
+  o:[{x:1,y:2,n:"Soul Lantern"},{x:4,y:2,n:"Soul Lantern"},{x:2,y:4,n:"Crimson Door"}]},
+
+ {n:"Library",d:"7×7 · enchanting nook",
+  key:{"#":"Dark Oak Planks",".":"Oak Planks","B":"Bookshelf","E":"Oak Planks","D":"Dark Oak Planks"},h:{"#":4,"B":2,"D":4},
+  g:["#######","#BBBBB#","#.....#","#..E..#","#.....#","#BBBBB#","###D###"],
+  o:[{x:3,y:3,n:"Enchanting Table"},{x:1,y:3,n:"Lectern"},{x:5,y:3,n:"Lantern"},{x:3,y:6,n:"Dark Oak Door"}]},
+
+ {n:"Garden",d:"9×7 · fenced with a pond",
+  key:{"F":"Oak Fence",".":"Grass Block","L":"Leaves","W":"Water"},h:{"F":2,"L":3},
+  g:["FFFFFFFFF","F..LLL..F","F.......F","FL..W..LF","F.......F","F..LLL..F","FFFFFFFFF"],
+  o:[{x:4,y:6,n:"Fence Gate"},{x:2,y:2,n:"Flower Pot"},{x:6,y:4,n:"Flower Pot"}]}
+];
+const HDIG={"1":1,"2":2,"3":3,"4":4,"5":5,"6":6,"7":7,"8":8,"9":9,"a":10,"b":11,"c":12};
+
+/* ================= state ================= */
+let W=40,H=30,cell=22,zoom=1,tool="pencil",sel=0,rot=0,fi=0,rsSel=0;
+let drag=null,dragTo=null,clip=null,stamp=null,moveObj=null;
+let undoStack=[],future=[],pending=null;
+let blueprint=false,sym="none",curH=1,gidSeq=1;
+let hoverTimer=null,hoverKey="",hoverCell=null,lastPaint=null;
+let buildMode=false,buildSteps=[],buildAt=0,isoDir=0;
+let projectId=null,fileHandle=null,dirty=false,labelsDirty=true,catFilter="";
+
+const $=s=>document.querySelector(s);
+const canvas=$("#grid"),ctx=canvas.getContext("2d",{alpha:false});
+const CATS=[...new Set(C.map(c=>c[2]))];
+
+function g2(v){return Array.from({length:H},()=>Array(W).fill(v))}
+function blank(name){return{name:name||"Floor 1",cells:g2(null),hts:g2(1),rs:g2(null),objs:[],labels:[]}}
+let F=[blank()];
+
+const clamp=(v,a,b)=>v<a?a:v>b?b:v;
+function toast(msg,ms){const t=$("#toast");t.textContent=msg;t.style.display="block";clearTimeout(toast._t);toast._t=setTimeout(()=>t.style.display="none",ms||1800)}
+function flash(msg){$("#saved").textContent=msg;clearTimeout(flash._t);flash._t=setTimeout(()=>$("#saved").textContent="",2200)}
+
+/* ================= colour helpers ================= */
+function rgb(hex){const h=hex.replace("#","");return[parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)]}
+function shade(hex,f){const[r,g,b]=rgb(hex);return`rgb(${clamp(Math.round(r*f),0,255)},${clamp(Math.round(g*f),0,255)},${clamp(Math.round(b*f),0,255)})`}
+function rgba(hex,a){const[r,g,b]=rgb(hex);return`rgba(${r},${g},${b},${a})`}
+function hashStr(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)}return h>>>0}
+function mulberry(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+
+/* ================= procedural 16x16 textures ================= */
+const texCache=new Map();
+function tileStyle(n,cat){
+ if(cat==="glass")return "glass";
+ if(cat==="fluid")return "fluid";
+ if(n.includes("Planks")||n.includes("Mosaic")||cat==="slab")return "planks";
+ if(n.includes("Log")||n.includes("Stem")||n.includes("Bamboo"))return "log";
+ if(n.includes("Bricks")||n==="Bricks")return "brick";
+ if(n.includes("Tiles")||n.includes("Quartz")||n==="Calcite")return "tile";
+ if(cat==="stairs")return "stair";
+ if(n.includes("Leaves")||n==="Azalea Leaves"||n==="Flowering Azalea")return "leaf";
+ if(cat==="metal"||cat==="concrete"||n.includes("Smooth")||n.includes("Polished")||cat==="copper")return "smooth";
+ if(cat==="stone"||cat==="nether"||cat==="natural"||cat==="special")return "coarse";
+ return "noise";
+}
+function buildTile(name,col,cat){
+ const cv=document.createElement("canvas");cv.width=cv.height=16;
+ const g=cv.getContext("2d"),r=mulberry(hashStr(name)),st=tileStyle(name,cat);
+ const base=()=>{g.fillStyle=col;g.fillRect(0,0,16,16)};
+ if(st==="planks"){base();
+  for(let b=0;b<4;b++){g.fillStyle=shade(col,.88+r()*.26);g.fillRect(0,b*4,16,4);
+   g.fillStyle=shade(col,.66);g.fillRect(0,b*4+3,16,1);
+   const s=1+Math.floor(r()*13);g.fillStyle=shade(col,.6);g.fillRect(s,b*4,1,3);}
+ }else if(st==="log"){base();
+  for(let x=0;x<16;x++){g.fillStyle=shade(col,.84+r()*.3);g.fillRect(x,0,1,16)}
+  g.fillStyle=shade(col,.58);g.fillRect(3,0,1,16);g.fillRect(11,0,1,16);
+ }else if(st==="brick"){g.fillStyle=shade(col,.72);g.fillRect(0,0,16,16);
+  for(let row=0;row<4;row++){const off=row%2?4:0;
+   for(let bx=-1;bx<3;bx++){g.fillStyle=shade(col,.92+r()*.2);g.fillRect(bx*8+off,row*4,7,3)}}
+ }else if(st==="tile"){base();
+  for(let ty=0;ty<2;ty++)for(let tx=0;tx<2;tx++){g.fillStyle=shade(col,.9+r()*.2);g.fillRect(tx*8,ty*8,7,7);
+   g.fillStyle=shade(col,.7);g.fillRect(tx*8+7,ty*8,1,8);g.fillRect(tx*8,ty*8+7,8,1)}
+ }else if(st==="stair"){base();
+  for(let y=0;y<16;y++){g.fillStyle=shade(col,.86+r()*.26);g.fillRect(0,y,16,1)}
+  for(let k=0;k<3;k++){const y=4+k*4;g.fillStyle=shade(col,1.18);g.fillRect(0,y,16,1);g.fillStyle=shade(col,.62);g.fillRect(0,y+1,16,1)}
+ }else if(st==="leaf"){base();
+  for(let y=0;y<16;y++)for(let x=0;x<16;x++){const v=r();g.fillStyle=shade(col,.72+v*.6);g.fillRect(x,y,1,1)}
+  g.clearRect(0,0,0,0);for(let k=0;k<14;k++){g.clearRect(Math.floor(r()*16),Math.floor(r()*16),1,1)}
+ }else if(st==="glass"){g.clearRect(0,0,16,16);
+  g.fillStyle=rgba(col,.24);g.fillRect(0,0,16,16);
+  g.fillStyle=rgba(col,.85);g.fillRect(0,0,16,1);g.fillRect(0,15,16,1);g.fillRect(0,0,1,16);g.fillRect(15,0,1,16);
+  g.fillStyle="rgba(255,255,255,.35)";g.fillRect(3,11,2,2);g.fillRect(5,9,2,2);g.fillRect(7,7,2,2);
+ }else if(st==="fluid"){base();
+  for(let y=0;y<16;y++){const w=Math.sin((y+hashStr(name)%7)*.9)*.14;g.fillStyle=shade(col,1+w);g.fillRect(0,y,16,1)}
+  g.fillStyle=rgba("#ffffff",.16);for(let k=0;k<3;k++){g.fillRect(Math.floor(r()*10),k*5+1,6,1)}
+ }else if(st==="smooth"){base();
+  g.fillStyle="rgba(255,255,255,.14)";g.fillRect(0,0,16,2);
+  g.fillStyle="rgba(0,0,0,.16)";g.fillRect(0,14,16,2);
+  g.fillStyle="rgba(255,255,255,.07)";g.beginPath();g.moveTo(0,16);g.lineTo(16,0);g.lineTo(16,5);g.lineTo(5,16);g.closePath();g.fill();
+ }else if(st==="coarse"){base();
+  for(let y=0;y<16;y+=2)for(let x=0;x<16;x+=2){g.fillStyle=shade(col,.84+r()*.32);g.fillRect(x,y,2,2)}
+  for(let k=0;k<5;k++){g.fillStyle=shade(col,.7+r()*.1);g.fillRect(Math.floor(r()*14),Math.floor(r()*14),2+Math.floor(r()*2),2)}
+ }else{base();
+  for(let y=0;y<16;y++)for(let x=0;x<16;x++){g.fillStyle=shade(col,.92+r()*.17);g.fillRect(x,y,1,1)}}
+ g.fillStyle="rgba(0,0,0,.16)";g.fillRect(0,15,16,1);g.fillRect(15,0,1,16);
+ return cv;
+}
+function tile(i){let t=texCache.get(i);if(!t){const c=C[i];t=buildTile(c[0],c[1],c[2]);texCache.set(i,t)}return t}
+const swCache=new Map();
+function swatchCSS(i){let u=swCache.get(i);if(!u){u=tile(i).toDataURL();swCache.set(i,u)}return u}
+
+/* ================= symmetry ================= */
+function symPts(x,y){
+ const out=[[x,y]],mx=W-1-x,my=H-1-y,seen=new Set([x+","+y]);
+ const add=(a,b)=>{if(a<0||b<0||a>=W||b>=H)return;const k=a+","+b;if(!seen.has(k)){seen.add(k);out.push([a,b])}};
+ if(sym==="x"||sym==="xz"||sym==="quad")add(mx,y);
+ if(sym==="z"||sym==="xz"||sym==="quad")add(x,my);
+ if(sym==="xz"||sym==="quad")add(mx,my);
+ if(sym==="quad"&&W===H){add(H-1-y,x);add(y,W-1-x);add(H-1-y,mx);add(my,W-1-x)}
+ return out;
+}
+
+/* ================= cell ops ================= */
+function inB(x,y){return x>=0&&y>=0&&x<W&&y<H}
+function setRaw(x,y,v,h){if(!inB(x,y))return;F[fi].cells[y][x]=v;if(v===null)F[fi].hts[y][x]=1;else if(h)F[fi].hts[y][x]=clamp(h,1,12)}
+function put(x,y,v,h){symPts(x,y).forEach(([a,b])=>setRaw(a,b,v,h))}
+function objAt(x,y){return F[fi].objs.find(o=>o.x===x&&o.y===y)}
+function removeGroup(x,y){const o=objAt(x,y);if(!o)return false;F[fi].objs=F[fi].objs.filter(q=>q.g!==o.g);return true}
+function clearCell(x,y){if(!inB(x,y))return;F[fi].cells[y][x]=null;F[fi].hts[y][x]=1;F[fi].rs[y][x]=null;removeGroup(x,y)}
+function eraseAt(x,y){symPts(x,y).forEach(([a,b])=>clearCell(a,b))}
+function setHeight(x,y,h){symPts(x,y).forEach(([a,b])=>{if(inB(a,b)&&F[fi].cells[b][a]!==null)F[fi].hts[b][a]=clamp(h,1,12)})}
+
+function placeObject(x,y,i,r){
+ if(!inB(x,y))return;
+ const name=C[i][0];let rr=r;
+ if(name.includes("Door")||name==="Fence Gate"){
+  const c=F[fi].cells,hz=(c[y]?.[x-1]!=null)||(c[y]?.[x+1]!=null),vt=(c[y-1]?.[x]!=null)||(c[y+1]?.[x]!=null);
+  if(hz&&!vt)rr=0;else if(vt&&!hz)rr=1;
+ }
+ removeGroup(x,y);
+ const g=gidSeq++;
+ F[fi].objs.push({x,y,i,r:rr,g});
+ if(name.includes("Bed")){
+  const dx=[0,1,0,-1][rr],dy=[-1,0,1,0][rr],x2=x+dx,y2=y+dy;
+  if(inB(x2,y2)){removeGroup(x2,y2);F[fi].objs.push({x:x2,y:y2,i,r:rr,g,part:2})}
+ }
+}
+function line(a,b,v,h){let[x,y]=a,[x1,y1]=b,dx=Math.abs(x1-x),sx=x<x1?1:-1,dy=-Math.abs(y1-y),sy=y<y1?1:-1,er=dx+dy;
+ for(;;){put(x,y,v,h);if(x===x1&&y===y1)break;const e=2*er;if(e>=dy){er+=dy;x+=sx}if(e<=dx){er+=dx;y+=sy}}}
+function roomRect(a,b,apply){
+ const x0=Math.min(a[0],b[0]),x1=Math.max(a[0],b[0]),y0=Math.min(a[1],b[1]),y1=Math.max(a[1],b[1]);
+ const w=+$("#wallMat").value,fl=+$("#floorMat").value;
+ if(!apply)return[x0,y0,x1,y1];
+ for(let y=y0;y<=y1;y++)for(let x=x0;x<=x1;x++){
+  const edge=(x===x0||x===x1||y===y0||y===y1);
+  put(x,y,edge?w:fl,edge?Math.max(curH,3):1);
+ }
+ return[x0,y0,x1,y1];
+}
+function flood(x,y,v){
+ if(!inB(x,y))return;const old=F[fi].cells[y][x];if(old===v)return;
+ const q=[[x,y]],seen=new Set();let n=0;
+ while(q.length&&n<W*H+10){const[a,b]=q.pop();if(!inB(a,b))continue;const k=a+","+b;if(seen.has(k))continue;seen.add(k);
+  if(F[fi].cells[b][a]!==old)continue;setRaw(a,b,v,curH);n++;q.push([a+1,b],[a-1,b],[a,b+1],[a,b-1])}
+}
+
+/* ================= light / mob spawn ================= */
+function isWall(f,x,y){const v=f.cells[y]?.[x];if(v==null)return false;
+ if(TRANSPARENT.has(C[v][2]))return false;return(f.hts?.[y]?.[x]||1)>=2}
+function lightMap(f){
+ const L=Array.from({length:H},()=>Array(W).fill(0)),q=[];
+ const emit=(x,y,lv)=>{if(inB(x,y)&&lv>L[y][x]){L[y][x]=lv;q.push([x,y])}};
+ for(let y=0;y<H;y++)for(let x=0;x<W;x++){const v=f.cells[y][x];if(v!=null&&LIGHT[C[v][0]])emit(x,y,LIGHT[C[v][0]])}
+ f.objs.forEach(o=>{const lv=LIGHT[C[o.i][0]];if(lv)emit(o.x,o.y,lv)});
+ let head=0;
+ while(head<q.length){const[x,y]=q[head++];const lv=L[y][x];if(lv<=1)continue;
+  [[1,0],[-1,0],[0,1],[0,-1]].forEach(([dx,dy])=>{const a=x+dx,b=y+dy;if(!inB(a,b))return;
+   if(isWall(f,a,b))return;
+   if(lv-1>L[b][a]){L[b][a]=lv-1;q.push([a,b])}})}
+ return L;
+}
+
+/* ================= rendering ================= */
+let rafP=false;
+function draw(){if(rafP)return;rafP=true;requestAnimationFrame(render)}
+
+function cellTex(v,x,y,s,alpha){
+ if(blueprint){ctx.globalAlpha=alpha;ctx.fillStyle="#e7f0f8";ctx.fillRect(x,y,s,s);
+  ctx.strokeStyle="#5b7d99";ctx.lineWidth=1;ctx.strokeRect(x+1.5,y+1.5,s-3,s-3);ctx.globalAlpha=1;return}
+ ctx.globalAlpha=alpha;ctx.drawImage(tile(v),x,y,s,s);ctx.globalAlpha=1;
+}
+let showHeights=true;
+/* height outlines are batched into one stroked path per height, so a full grid stays fast */
+function heightOutlines(buckets){
+ buckets.forEach((path,h)=>{
+  ctx.strokeStyle="rgba(190,225,255,"+Math.min(.75,.18+h*.06)+")";ctx.lineWidth=1;ctx.stroke(path)});
+}
+function heightLabel(h,x,y,s){
+ if(s<15)return;
+ ctx.fillStyle="#000a";ctx.fillRect(x+s-10,y+1,9,9);
+ ctx.fillStyle="#cfe9ff";ctx.font="bold 8px system-ui";ctx.textAlign="center";ctx.textBaseline="middle";
+ ctx.fillText(h>9?"+":String(h),x+s-5.5,y+6);ctx.textAlign="left";ctx.textBaseline="alphabetic";
+}
+function paintFloor(f,alpha,layerMin){
+ const solid=alpha>.5,buckets=new Map(),labels=[];
+ for(let y=0;y<H;y++)for(let x=0;x<W;x++){
+  const v=f.cells[y]?.[x];if(v==null||!C[v])continue;
+  const h=f.hts?.[y]?.[x]||1;
+  if(layerMin&&h<layerMin)continue;
+  cellTex(v,x*cell,y*cell,cell,alpha);
+  if(!solid||!showHeights||h<2)continue;
+  let pth=buckets.get(h);if(!pth){pth=new Path2D();buckets.set(h,pth)}
+  pth.rect(x*cell+.5,y*cell+.5,cell-1,cell-1);
+  const left=f.cells[y]?.[x-1],lh=left!=null?(f.hts?.[y]?.[x-1]||1):0;
+  const up=f.cells[y-1]?.[x],uh=up!=null?(f.hts?.[y-1]?.[x]||1):0;
+  if(lh!==h&&uh!==h)labels.push([h,x*cell,y*cell]);   // label once per run, not every block
+ }
+ if(buckets.size)heightOutlines(buckets);
+ labels.forEach(([h,x,y])=>heightLabel(h,x,y,cell));
+}
+function icon(o,x,y,s,alpha){
+ const c=C[o.i];if(!c)return;const n=c[0];
+ ctx.save();ctx.globalAlpha=alpha==null?1:alpha;
+ ctx.translate(x+s/2,y+s/2);ctx.rotate((o.r||0)*Math.PI/2);ctx.translate(-s/2,-s/2);
+ ctx.fillStyle=c[1];ctx.strokeStyle="#0d0d0d";ctx.lineWidth=Math.max(1,s/14);
+ if(n.includes("Door")||n==="Fence Gate"){ctx.fillRect(4,s*.34,s-8,s*.32);ctx.strokeRect(4,s*.34,s-8,s*.32);
+  ctx.fillStyle="#1b1b1b";ctx.beginPath();ctx.arc(s-7,s/2,Math.max(1.2,s/13),0,7);ctx.fill()}
+ else if(n.includes("Bed")){ctx.fillRect(3,3,s-6,s-6);ctx.strokeRect(3,3,s-6,s-6);
+  if(o.part!==2){ctx.fillStyle="#f2f2ee";ctx.fillRect(5,5,s-10,s*.26);ctx.strokeRect(5,5,s-10,s*.26)}}
+ else if(n.includes("Chest")||n==="Barrel"){ctx.fillRect(3,4,s-6,s-8);ctx.strokeRect(3,4,s-6,s-8);
+  ctx.fillStyle="#f0c23d";ctx.fillRect(s/2-2,s/2-2,4,4)}
+ else if(n.includes("Stairs")){ctx.fillRect(3,3,s-6,s-6);for(let k=0;k<3;k++){ctx.strokeRect(3+k*2.5,3+k*2.5,s-6-k*5,s-6-k*5)}}
+ else if(c[2]==="light"){ctx.beginPath();ctx.arc(s/2,s/2,s*.3,0,7);ctx.fill();ctx.stroke();
+  ctx.fillStyle="rgba(255,225,140,.55)";ctx.beginPath();ctx.arc(s/2,s/2,s*.46,0,7);ctx.fill()}
+ else{ctx.fillRect(3,3,s-6,s-6);ctx.strokeRect(3,3,s-6,s-6);ctx.fillStyle="#ffffff44";ctx.fillRect(5,5,s-10,2.5)}
+ ctx.restore();ctx.globalAlpha=1;
+}
+function rsIcon(r,x,y,s){
+ const p=RS[r.i];if(!p)return;const[n,col,shape]=p;
+ ctx.save();ctx.translate(x+s/2,y+s/2);ctx.rotate((r.r||0)*Math.PI/2);ctx.translate(-s/2,-s/2);
+ ctx.fillStyle=col;ctx.strokeStyle="#12060a";ctx.lineWidth=1;
+ if(shape==="dust"){ctx.strokeStyle=col;ctx.lineWidth=Math.max(2,s*.16);ctx.beginPath();ctx.moveTo(0,s/2);ctx.lineTo(s,s/2);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(s/2,0);ctx.lineTo(s/2,s);ctx.stroke()}
+ else if(shape==="torch"){ctx.fillRect(s/2-1.5,s*.35,3,s*.5);ctx.fillStyle="#ff6a4a";ctx.beginPath();ctx.arc(s/2,s*.32,s*.15,0,7);ctx.fill()}
+ else if(shape==="plate"){ctx.fillRect(s*.16,s*.16,s*.68,s*.68);ctx.strokeRect(s*.16,s*.16,s*.68,s*.68)}
+ else if(shape==="arrow"){ctx.fillRect(s*.14,s*.14,s*.72,s*.72);ctx.strokeRect(s*.14,s*.14,s*.72,s*.72);
+  ctx.fillStyle="#fff";ctx.beginPath();ctx.moveTo(s/2,s*.22);ctx.lineTo(s*.72,s*.6);ctx.lineTo(s*.28,s*.6);ctx.closePath();ctx.fill()}
+ else{ctx.beginPath();ctx.arc(s/2,s/2,s*.26,0,7);ctx.fill();ctx.stroke()}
+ ctx.restore();
+}
+function previewRect(a,b,stroke,fill){
+ const x0=Math.min(a[0],b[0]),x1=Math.max(a[0],b[0]),y0=Math.min(a[1],b[1]),y1=Math.max(a[1],b[1]);
+ ctx.save();if(fill){ctx.globalAlpha=.22;ctx.fillStyle=fill;ctx.fillRect(x0*cell,y0*cell,(x1-x0+1)*cell,(y1-y0+1)*cell);ctx.globalAlpha=1}
+ ctx.strokeStyle=stroke;ctx.lineWidth=2;ctx.setLineDash([6,4]);
+ ctx.strokeRect(x0*cell+1,y0*cell+1,(x1-x0+1)*cell-2,(y1-y0+1)*cell-2);ctx.restore();
+}
+function render(){
+ rafP=false;
+ const pw=W*cell,ph=H*cell;
+ if(canvas.width!==pw||canvas.height!==ph){canvas.width=pw;canvas.height=ph}
+ canvas.style.width=(pw*zoom)+"px";canvas.style.height=(ph*zoom)+"px";
+ $("#board").style.width=pw*zoom+"px";$("#board").style.height=ph*zoom+"px";
+ const lb=$("#labels");lb.style.transform=`scale(${zoom})`;lb.style.transformOrigin="0 0";lb.style.width=pw+"px";lb.style.height=ph+"px";
+ ctx.imageSmoothingEnabled=false;showHeights=$("#showH").checked;
+ ctx.fillStyle=blueprint?"#16324a":"#18202a";ctx.fillRect(0,0,pw,ph);
+
+ const step=buildMode?buildSteps[buildAt]:null;
+ if(buildMode&&step){
+  for(let i=0;i<step.f;i++)paintFloor(F[i],.12);
+  paintFloor(F[step.f],.2);
+  paintFloor(F[step.f],1,step.layer);
+ }else{
+  if($("#ghost").checked&&fi>0)paintFloor(F[fi-1],.16);
+  paintFloor(F[fi],1);
+ }
+
+ // grid
+ ctx.strokeStyle=blueprint?"#3f6b8f":"#394655";ctx.lineWidth=1;ctx.beginPath();
+ for(let x=0;x<=W;x++){ctx.moveTo(x*cell+.5,0);ctx.lineTo(x*cell+.5,ph)}
+ for(let y=0;y<=H;y++){ctx.moveTo(0,y*cell+.5);ctx.lineTo(pw,y*cell+.5)}
+ ctx.stroke();
+ if($("#chunks").checked){
+  const ox=((+$("#ox").value||0)%16+16)%16,oz=((+$("#oz").value||0)%16+16)%16;
+  ctx.strokeStyle="#e0b84eaa";ctx.lineWidth=2;ctx.beginPath();
+  for(let x=(16-ox)%16;x<=W;x+=16){ctx.moveTo(x*cell+.5,0);ctx.lineTo(x*cell+.5,ph)}
+  for(let y=(16-oz)%16;y<=H;y+=16){ctx.moveTo(0,y*cell+.5);ctx.lineTo(pw,y*cell+.5)}
+  ctx.stroke();
+ }
+
+ // light overlay
+ if($("#lightOv").checked&&!buildMode){
+  const L=lightMap(F[fi]);
+  for(let y=0;y<H;y++)for(let x=0;x<W;x++){
+   const v=F[fi].cells[y][x];if(v==null)continue;
+   if((F[fi].hts[y][x]||1)>1||TRANSPARENT.has(C[v][2]))continue;   // walls & glass aren't spawn surfaces
+   const lv=L[y][x];
+   if(lv===0){ctx.fillStyle="rgba(214,46,46,.42)";ctx.fillRect(x*cell,y*cell,cell,cell)}
+   else if(lv<8){ctx.fillStyle="rgba(228,166,44,.22)";ctx.fillRect(x*cell,y*cell,cell,cell)}
+  }
+ }
+
+ // redstone + objects
+ if($("#rsOv").checked)for(let y=0;y<H;y++)for(let x=0;x<W;x++){const r=F[fi].rs?.[y]?.[x];if(r)rsIcon(r,x*cell,y*cell,cell)}
+ F[fi].objs.forEach(o=>icon(o,o.x*cell,o.y*cell,cell));
+
+ // live previews
+ if(drag&&dragTo){
+  if(tool==="room"){const[x0,y0,x1,y1]=roomRect(drag,dragTo,false);previewRect([x0,y0],[x1,y1],"#77c45a",C[+$("#wallMat").value][1])}
+  else if(tool==="wall"){ctx.save();ctx.globalAlpha=.55;
+   let[x,y]=drag,[x1,y1]=dragTo,dx=Math.abs(x1-x),sx=x<x1?1:-1,dy=-Math.abs(y1-y),sy=y<y1?1:-1,er=dx+dy;
+   for(;;){ctx.drawImage(tile(sel),x*cell,y*cell,cell,cell);if(x===x1&&y===y1)break;const e=2*er;if(e>=dy){er+=dy;x+=sx}if(e<=dx){er+=dx;y+=sy}}
+   ctx.restore()}
+  else if(tool==="select")previewRect(drag,dragTo,"#6fb7e8","#6fb7e8");
+ }
+ if(stamp&&hoverCell)drawStampGhost(stamp,hoverCell[0],hoverCell[1]);
+ if(clip&&tool==="select"&&!drag&&hoverCell&&clip.pasting){
+  ctx.save();ctx.globalAlpha=.5;
+  clip.c.forEach((row,yy)=>row.forEach((v,xx)=>{if(v!=null&&inB(hoverCell[0]+xx,hoverCell[1]+yy))ctx.drawImage(tile(v),(hoverCell[0]+xx)*cell,(hoverCell[1]+yy)*cell,cell,cell)}));
+  ctx.restore();previewRect(hoverCell,[hoverCell[0]+clip.w-1,hoverCell[1]+clip.h-1],"#6fb7e8");
+ }
+ if(moveObj&&hoverCell){icon({...moveObj,x:hoverCell[0],y:hoverCell[1]},hoverCell[0]*cell,hoverCell[1]*cell,cell,.6);
+  previewRect(hoverCell,hoverCell,"#77c45a")}
+ // symmetry guides
+ if(sym!=="none"){ctx.save();ctx.strokeStyle="#77c45a66";ctx.lineWidth=2;ctx.setLineDash([4,6]);ctx.beginPath();
+  if(sym!=="z"){ctx.moveTo(pw/2,0);ctx.lineTo(pw/2,ph)}
+  if(sym!=="x"){ctx.moveTo(0,ph/2);ctx.lineTo(pw,ph/2)}ctx.stroke();ctx.restore()}
+
+ if(labelsDirty)renderLabels();
+}
+function drawStampGhost(s,px,py){
+ ctx.save();ctx.globalAlpha=.55;
+ s.g.forEach((row,y)=>[...row].forEach((ch,x)=>{const m=s.idx[ch];if(m==null)return;
+  const a=px+x,b=py+y;if(inB(a,b))ctx.drawImage(tile(m),a*cell,b*cell,cell,cell)}));
+ ctx.restore();previewRect([px,py],[px+s.g[0].length-1,py+s.g.length-1],"#e0b84e");
+}
+function renderLabels(){
+ labelsDirty=false;const e=$("#labels");e.innerHTML="";
+ F[fi].labels.forEach((l,i)=>{
+  const d=document.createElement("div");d.className="label"+(l.auto?" auto":"");
+  d.style.left=l.x*cell+"px";d.style.top=l.y*cell+"px";d.textContent=l.t;d.title="Drag to move · double-click to rename · right-click to delete";
+  d.onpointerdown=ev=>{ev.stopPropagation();ev.preventDefault();if(ev.button!==0)return;
+   const r=canvas.getBoundingClientRect();beginChange();
+   const mv=m=>{l.x=clamp(Math.floor((m.clientX-r.left)/zoom/cell),0,W-1);l.y=clamp(Math.floor((m.clientY-r.top)/zoom/cell),0,H-1);labelsDirty=true;draw()};
+   const up=()=>{document.removeEventListener("pointermove",mv);document.removeEventListener("pointerup",up);commit()};
+   document.addEventListener("pointermove",mv);document.addEventListener("pointerup",up)};
+  d.ondblclick=ev=>{ev.stopPropagation();const t=prompt("Label text",l.t);if(t!=null){beginChange();l.t=t;l.auto=false;labelsDirty=true;commit();draw();refresh()}};
+  d.oncontextmenu=ev=>{ev.preventDefault();ev.stopPropagation();beginChange();F[fi].labels.splice(i,1);labelsDirty=true;commit();draw();refresh()};
+  e.append(d)});
+}
+
+/* ================= undo / dirty ================= */
+function stateStr(){return JSON.stringify({W,H,fi,F})}
+function beginChange(){pending=stateStr()}
+function commit(){
+ if(pending!==null&&pending!==stateStr()){undoStack.push(pending);if(undoStack.length>60)undoStack.shift();future.length=0;dirty=true}
+ pending=null;
+}
+function applyState(s){
+ const o=JSON.parse(s);W=o.W;H=o.H;F=o.F;fi=clamp(o.fi||0,0,F.length-1);
+ $("#gw").value=W;$("#gh").value=H;labelsDirty=true;floors();draw();refresh();dirty=true;
+}
+function undo(){if(!undoStack.length)return toast("Nothing to undo");future.push(stateStr());applyState(undoStack.pop())}
+function redo(){if(!future.length)return toast("Nothing to redo");undoStack.push(stateStr());applyState(future.pop())}
+
+/* ================= pointer input ================= */
+function position(e){const r=canvas.getBoundingClientRect();
+ return[clamp(Math.floor((e.clientX-r.left)/zoom/cell),0,W-1),clamp(Math.floor((e.clientY-r.top)/zoom/cell),0,H-1)]}
+
+function eyedrop(x,y){
+ const o=objAt(x,y);const v=F[fi].cells[y][x];
+ if(o){sel=o.i;rot=o.r||0}else if(v!=null){sel=v;curH=F[fi].hts[y][x];$("#curH").value=curH;$("#curHv").textContent=curH+" tall"}
+ else return toast("Nothing there to pick up");
+ palette($("#search").value);selection();toast("Picked up "+C[sel][0]);
+}
+
+canvas.addEventListener("pointerdown",e=>{
+ if(e.button!==0)return;
+ canvas.setPointerCapture(e.pointerId);
+ clearTimeout(hoverTimer);$("#hoverTip").style.display="none";
+ const p=position(e);
+ if(buildMode)return;
+ if(e.altKey){eyedrop(...p);return}
+ beginChange();
+
+ if(stamp){placeStamp(stamp,p[0],p[1]);stamp=null;commit();labelsDirty=true;draw();refresh();toast("Stamp placed");return}
+ if(clip&&clip.pasting){pasteAt(p[0],p[1]);clip.pasting=false;$("#paste").classList.remove("active");commit();labelsDirty=true;draw();refresh();return}
+ if(moveObj){placeObject(p[0],p[1],moveObj.i,moveObj.r);moveObj=null;$("#status").textContent="Placed";commit();draw();refresh();return}
+
+ switch(tool){
+  case "pencil":put(p[0],p[1],sel,curH);lastPaint=p;break;
+  case "erase":eraseAt(p[0],p[1]);lastPaint=p;break;
+  case "fill":flood(p[0],p[1],sel);break;
+  case "height":setHeight(p[0],p[1],e.shiftKey?Math.max(1,curH-1):curH);lastPaint=p;break;
+  case "object":symPts(p[0],p[1]).forEach(([a,b])=>placeObject(a,b,sel,rot));break;
+  case "redstone":symPts(p[0],p[1]).forEach(([a,b])=>{if(inB(a,b))F[fi].rs[b][a]={i:rsSel,r:rot}});lastPaint=p;break;
+  case "window":{
+   const wall=F[fi].cells[p[1]][p[0]];
+   if(wall==null){toast("Put a window in a wall — that spot is empty");pending=null;return}
+   const gi=C.findIndex(c=>c[0]==="Glass Pane");put(p[0],p[1],gi,F[fi].hts[p[1]][p[0]]);break}
+  case "label":{
+   const t=prompt("Room / area name");
+   if(t)  {F[fi].labels.push({x:p[0],y:p[1],t});labelsDirty=true}
+   break}
+  case "move":{
+   const o=objAt(p[0],p[1]);
+   if(o){const head=F[fi].objs.filter(q=>q.g===o.g).find(q=>q.part!==2)||o;
+    moveObj={i:o.i,r:o.r||0,ox:head.x,oy:head.y};removeGroup(p[0],p[1]);$("#status").textContent="Carrying "+C[o.i][0]+" — click to drop, Esc to put it back"}
+   else toast("Nothing to move there");
+   break}
+  default:drag=p;dragTo=p;
+ }
+ draw();
+});
+
+canvas.addEventListener("pointermove",e=>{
+ const p=position(e);hoverCell=p;
+ const ox=+$("#ox").value||0,oy=+$("#oy").value||0,oz=+$("#oz").value||0;
+ const v=F[fi].cells[p[1]]?.[p[0]],o=objAt(p[0],p[1]),r=F[fi].rs?.[p[1]]?.[p[0]];
+ const nm=o?C[o.i]?.[0]:(v!=null?C[v]?.[0]:null);
+ const hh=v!=null?F[fi].hts[p[1]][p[0]]:0;
+ $("#status").textContent=`X ${ox+p[0]} · Y ${oy+fi*(+$("#floorHeight").value||4)} · Z ${oz+p[1]} · grid ${p[0]},${p[1]} · ${F[fi].name}`
+  +(nm?` · ${nm}${hh>1?" ("+hh+" tall)":""}`:"")+(r?` · ${RS[r.i][0]}`:"");
+
+ const key=`${fi}:${p[0]}:${p[1]}`;
+ if(key!==hoverKey){hoverKey=key;clearTimeout(hoverTimer);$("#hoverTip").style.display="none";
+  if(nm||r){const mx=e.clientX,my=e.clientY,txt=(nm||"")+(nm&&r?" + ":"")+(r?RS[r.i][0]:"")+(hh>1?"  ·  "+hh+" blocks tall":"");
+   hoverTimer=setTimeout(()=>{if(hoverKey===key){const t=$("#hoverTip");t.textContent=txt;t.style.left=mx+"px";t.style.top=(my-12)+"px";t.style.display="block"}},480)}}
+ if(e.buttons){clearTimeout(hoverTimer);$("#hoverTip").style.display="none"}
+
+ if(buildMode)return;
+ if(drag){dragTo=p;
+  const dx=Math.abs(p[0]-drag[0])+1,dz=Math.abs(p[1]-drag[1])+1;
+  if(tool==="room"||tool==="wall"||tool==="select")$("#status").textContent=`${tool.toUpperCase()} · ${dx} × ${dz} blocks (${dx*dz} total)`;
+  draw();return}
+ if(e.buttons&&!e.altKey&&(tool==="pencil"||tool==="erase"||tool==="height"||tool==="redstone")){
+  // walk every cell between the last sample and this one so a fast drag leaves no gaps
+  const a=lastPaint||p,pts=[];
+  let[x,y]=a;const[x1,y1]=p;let dx=Math.abs(x1-x),sx=x<x1?1:-1,dy=-Math.abs(y1-y),sy=y<y1?1:-1,er=dx+dy,guard=0;
+  for(;guard<4096;guard++){pts.push([x,y]);if(x===x1&&y===y1)break;const q=2*er;if(q>=dy){er+=dy;x+=sx}if(q<=dx){er+=dx;y+=sy}}
+  const lower=e.shiftKey?Math.max(1,curH-1):curH;
+  pts.forEach(([a2,b2])=>{
+   if(tool==="pencil")put(a2,b2,sel,curH);
+   else if(tool==="erase")eraseAt(a2,b2);
+   else if(tool==="height")setHeight(a2,b2,lower);
+   else symPts(a2,b2).forEach(([c2,d2])=>{if(inB(c2,d2))F[fi].rs[d2][c2]={i:rsSel,r:rot}})});
+  lastPaint=p;draw();return}
+ if(stamp||moveObj||(clip&&clip.pasting))draw();
+});
+
+function endDrag(e){
+ lastPaint=null;
+ if(!drag){commit();refresh();return}
+ const p=e?position(e):dragTo||drag;
+ if(tool==="wall")line(drag,p,sel,curH);
+ else if(tool==="room"){
+  const[x0,y0,x1,y1]=roomRect(drag,p,true);
+  if($("#autoLabel").checked){F[fi].labels.push({x:x0+1,y:y0+1,t:`${x1-x0+1}×${y1-y0+1}`,auto:true});labelsDirty=true}
+ }else if(tool==="select"){
+  const x0=Math.min(drag[0],p[0]),x1=Math.max(drag[0],p[0]),y0=Math.min(drag[1],p[1]),y1=Math.max(drag[1],p[1]);
+  clip={w:x1-x0+1,h:y1-y0+1,c:[],ht:[],objs:[],labels:[],pasting:false};
+  for(let y=y0;y<=y1;y++){clip.c.push(F[fi].cells[y].slice(x0,x1+1));clip.ht.push(F[fi].hts[y].slice(x0,x1+1))}
+  F[fi].objs.forEach(o=>{if(o.x>=x0&&o.x<=x1&&o.y>=y0&&o.y<=y1&&o.part!==2)clip.objs.push({dx:o.x-x0,dy:o.y-y0,i:o.i,r:o.r})});
+  F[fi].labels.forEach(l=>{if(l.x>=x0&&l.x<=x1&&l.y>=y0&&l.y<=y1)clip.labels.push({dx:l.x-x0,dy:l.y-y0,t:l.t,auto:l.auto})});
+  $("#paste").classList.add("active");toast(`Copied ${clip.w}×${clip.h} — hit Paste, then click where it goes`);
+ }
+ drag=null;dragTo=null;commit();draw();refresh();
+}
+canvas.addEventListener("pointerup",endDrag);
+canvas.addEventListener("pointercancel",()=>{drag=null;dragTo=null;commit();draw()});
+canvas.addEventListener("pointerleave",()=>{clearTimeout(hoverTimer);hoverKey="";hoverCell=null;$("#hoverTip").style.display="none";if(stamp||moveObj)draw()});
+canvas.addEventListener("contextmenu",e=>{
+ e.preventDefault();const p=position(e);
+ const o=objAt(p[0],p[1]),r=F[fi].rs?.[p[1]]?.[p[0]];
+ if(o){beginChange();const grp=F[fi].objs.filter(q=>q.g===o.g);const nr=((o.r||0)+1)%4;
+  const head=grp.find(q=>q.part!==2)||grp[0];F[fi].objs=F[fi].objs.filter(q=>q.g!==o.g);
+  placeObject(head.x,head.y,head.i,nr);commit();draw();refresh();toast("Rotated "+C[o.i][0])}
+ else if(r){beginChange();r.r=((r.r||0)+1)%4;commit();draw()}
+ else{rot=(rot+1)%4;selection();toast("Next piece faces "+["North","East","South","West"][rot])}
+});
+canvas.addEventListener("wheel",e=>{
+ if(!(e.ctrlKey||e.metaKey))return;e.preventDefault();
+ zoom=clamp(+(zoom+(e.deltaY<0?.12:-.12)).toFixed(2),.3,3);draw();
+},{passive:false});
+
+function pasteAt(px,py){
+ clip.c.forEach((row,yy)=>row.forEach((v,xx)=>{if(v!=null)setRaw(px+xx,py+yy,v,clip.ht[yy][xx])}));
+ clip.objs.forEach(o=>placeObject(px+o.dx,py+o.dy,o.i,o.r));
+ clip.labels.forEach(l=>{if(inB(px+l.dx,py+l.dy))F[fi].labels.push({x:px+l.dx,y:py+l.dy,t:l.t,auto:l.auto})});
+}
+function placeStamp(s,px,py){
+ s.g.forEach((row,y)=>[...row].forEach((ch,x)=>{
+  const m=s.idx[ch];if(m==null)return;
+  const h=s.hg?HDIG[s.hg[y][x]]||1:(s.h[ch]||1);
+  setRaw(px+x,py+y,m,h)}));
+ s.o.forEach(o=>{const i=C.findIndex(c=>c[0]===o.n);if(i>=0)placeObject(px+o.x,py+o.y,i,o.r||0)});
+}
+
+/* ================= panels ================= */
+function counts(){
+ const m={},scope=$("#countScope").value==="all"?F:[F[fi]];
+ scope.forEach(f=>{f.cells.forEach((row,y)=>row.forEach((v,x)=>{if(v!=null&&C[v])m[v]=(m[v]||0)+(f.hts?.[y]?.[x]||1)}));
+  f.objs.forEach(o=>{if(o.part!==2&&C[o.i])m[o.i]=(m[o.i]||0)+1})});
+ const rows=Object.entries(m).sort((a,b)=>b[1]-a[1]);
+ $("#counts").innerHTML=rows.length?rows.slice(0,40).map(([i,n])=>
+  `<div class=stat><span class=sw style="background-image:url(${swatchCSS(+i)});background-size:cover"></span><span style="flex:1">${C[i][0]}</span><b>${n}</b></div>`).join("")
+  +(rows.length>40?`<p class=small style="margin:6px 0 0">+${rows.length-40} more — see the shopping list</p>`:"")
+  :"<p class=small>Nothing placed yet.</p>";
+}
+function labelList(){
+ const e=$("#labelList");
+ if(!F[fi].labels.length){e.innerHTML="<p class=small>No labels on this floor. Use the Label tool.</p>";return}
+ e.innerHTML=F[fi].labels.map((l,i)=>`<div class=stat><span style="flex:1">${l.t}</span><button data-dl="${i}" class="danger" style="flex:none;padding:2px 7px">×</button></div>`).join("");
+ e.querySelectorAll("[data-dl]").forEach(b=>b.onclick=()=>{beginChange();F[fi].labels.splice(+b.dataset.dl,1);commit();labelsDirty=true;draw();refresh()});
+}
+function selection(){
+ const b=C[sel];
+ $("#selection").innerHTML=`<div class=row><span class=sw style="background-image:url(${swatchCSS(sel)});background-size:cover;flex:none"></span><b style="flex:1">${b[0]}</b></div>
+ <div class=small>${b[2]} · next piece faces ${["North","East","South","West"][rot]} · ${curH} block${curH>1?"s":""} tall</div>`;
+}
+function refresh(){counts();labelList();selection()}
+function palette(q=""){
+ const e=$("#palette");e.innerHTML="";const ql=q.toLowerCase();let shown=0;
+ C.forEach((b,i)=>{
+  if(catFilter&&b[2]!==catFilter)return;
+  if(ql&&!(b[0].toLowerCase().includes(ql)||b[2].toLowerCase().includes(ql)))return;
+  shown++;if(shown>260)return;
+  const z=document.createElement("button");z.className="mat"+(i===sel?" active":"");z.type="button";
+  z.innerHTML=`<span class=sw style="background-image:url(${swatchCSS(i)});background-size:cover"></span><span>${b[0]}</span>`;
+  z.onclick=()=>{sel=i;palette($("#search").value);selection();if(tool==="erase"||tool==="move")setTool("pencil")};
+  e.append(z)});
+ if(!shown)e.innerHTML="<p class=small>No blocks match that search.</p>";
+}
+function floors(){
+ const e=$("#floors");e.innerHTML="";
+ F.forEach((f,i)=>{const b=document.createElement("button");b.type="button";
+  b.className="floor"+(i===fi?" active":"");b.textContent=f.name;
+  b.onclick=ev=>{if(ev.shiftKey){duplicateFloor(i);return}fi=i;labelsDirty=true;floors();draw();refresh()};
+  e.append(b)});
+}
+function setTool(t){
+ tool=t;document.querySelectorAll(".tool").forEach(x=>x.classList.toggle("active",x.dataset.t===t));
+ if(t!=="select"&&clip)clip.pasting=false;
+ if(t==="redstone")rsDialog.showModal();
+ $("#status").textContent="Tool: "+t;draw();
+}
+function duplicateFloor(i){
+ beginChange();const copy=JSON.parse(JSON.stringify(F[i]));copy.name=F[i].name+" copy";
+ F.splice(i+1,0,copy);fi=i+1;commit();labelsDirty=true;floors();draw();refresh();toast("Floor duplicated");
+}
+
+/* ================= isometric 3D preview ================= */
+function isoRender(){
+ const ic=$("#iso"),g=ic.getContext("2d");
+ g.fillStyle="#10161d";g.fillRect(0,0,ic.width,ic.height);
+ const fh=+$("#floorHeight").value||4;
+ let maxTop=0;F.forEach((f,lev)=>f.hts.forEach(r=>r.forEach(h=>{maxTop=Math.max(maxTop,lev*fh+h)})));
+ const span=Math.max(W+H,1);
+ const s=clamp(Math.min((ic.width-40)/span,(ic.height-60)/(span*.5+maxTop*1.05)),2,14);
+ const ox=ic.width/2,oy=48+maxTop*s*.55;
+ const rotXZ=(x,z)=>{switch(isoDir){case 1:return[z,W-1-x];case 2:return[W-1-x,H-1-z];case 3:return[H-1-z,x];default:return[x,z]}};
+ const cubes=[];
+ F.forEach((f,lev)=>{
+  const base=lev*fh;
+  for(let z=0;z<H;z++)for(let x=0;x<W;x++){
+   const v=f.cells[z]?.[x];if(v==null||!C[v])continue;
+   const h=f.hts[z][x]||1;
+   for(let y=0;y<h;y++){
+    const nx=(f.cells[z]?.[x+1]!=null)&&(f.hts[z][x+1]||1)>y;
+    const nz=(f.cells[z+1]?.[x]!=null)&&(f.hts[z+1]?.[x]||1)>y;
+    const up=y+1<h;
+    if(nx&&nz&&up)continue;              // fully hidden — skip
+    const[px,pz]=rotXZ(x,z);
+    cubes.push([px,pz,base+y,C[v][1],up])}
+  }
+  f.objs.forEach(o=>{const v=f.cells[o.y]?.[o.x];const h=v!=null?(f.hts[o.y][o.x]||1):1;
+   const[px,pz]=rotXZ(o.x,o.y);cubes.push([px,pz,base+h,C[o.i]?.[1]||"#fff",false,true])});
+ });
+ cubes.sort((a,b)=>(a[0]+a[1]+a[2])-(b[0]+b[1]+b[2]));
+ cubes.forEach(([x,z,y,col,covered,isObj])=>{
+  const X=ox+(x-z)*s,Y=oy+(x+z)*s*.5-y*s;
+  const sc=isObj?s*.62:s,off=isObj?(s-sc):0;
+  const Xo=X,Yo=Y+off*.5;
+  g.fillStyle=shade(col,.72);g.beginPath();g.moveTo(Xo-sc,Yo);g.lineTo(Xo,Yo+sc*.5);g.lineTo(Xo,Yo+sc*.5+sc);g.lineTo(Xo-sc,Yo+sc);g.closePath();g.fill();
+  g.fillStyle=shade(col,.52);g.beginPath();g.moveTo(Xo+sc,Yo);g.lineTo(Xo,Yo+sc*.5);g.lineTo(Xo,Yo+sc*.5+sc);g.lineTo(Xo+sc,Yo+sc);g.closePath();g.fill();
+  if(!covered){g.fillStyle=shade(col,1.05);g.beginPath();g.moveTo(Xo,Yo-sc*.5);g.lineTo(Xo+sc,Yo);g.lineTo(Xo,Yo+sc*.5);g.lineTo(Xo-sc,Yo);g.closePath();g.fill()}
+ });
+ g.fillStyle="#dbe5ee";g.font="bold 15px system-ui";g.fillText($("#name").value||"Untitled build",16,26);
+ g.fillStyle="#91a2b4";g.font="12px system-ui";
+ g.fillText(`${W} × ${H} blocks · ${F.length} floor${F.length>1?"s":""} · ${maxTop} blocks tall · ${cubes.length.toLocaleString()} blocks drawn`,16,45);
+ g.fillText("View "+["South-east","South-west","North-west","North-east"][isoDir],ic.width-130,26);
+}
+
+/* ================= shopping list ================= */
+const STACK=n=>/Bed$/.test(n)?1:(/Sign|Bucket/.test(n)?16:64);
+function tally(scope){
+ const m={},fs=scope==="floor"?[F[fi]]:F;
+ fs.forEach(f=>{
+  f.cells.forEach((row,y)=>row.forEach((v,x)=>{if(v!=null&&C[v])m[C[v][0]]=(m[C[v][0]]||0)+(f.hts?.[y]?.[x]||1)}));
+  f.objs.forEach(o=>{if(o.part!==2&&C[o.i])m[C[o.i][0]]=(m[C[o.i][0]]||0)+1});
+  f.rs?.forEach(row=>row.forEach(r=>{if(r&&RS[r.i])m[RS[r.i][0]]=(m[RS[r.i][0]]||0)+1}));
+ });
+ return Object.entries(m).sort((a,b)=>b[1]-a[1]);
+}
+function shopRender(){
+ const rows=tally($("#shopScope").value),stacks=$("#shopStacks").checked,e=$("#shopList");
+ if(!rows.length){e.innerHTML="<p class=small style='padding:10px'>Nothing placed yet.</p>";return}
+ const total=rows.reduce((a,b)=>a+b[1],0);
+ e.innerHTML=rows.map(([n,q],i)=>{
+  const st=STACK(n),full=Math.floor(q/st),rem=q%st;
+  const qty=stacks&&st>1&&q>=st?`${full} stack${full>1?"s":""}${rem?" + "+rem:""} <span style="opacity:.6">(${q})</span>`:q;
+  return `<label class=shopitem><input type=checkbox data-i="${i}"><span class=n>${n}</span><span class=q>${qty}</span></label>`}).join("")
+  +`<div class=shopitem style="border:0"><b class=n>Total blocks</b><b class=q>${total.toLocaleString()}</b></div>`;
+ e.querySelectorAll("input").forEach(c=>c.onchange=()=>c.closest(".shopitem").classList.toggle("done",c.checked));
+}
+
+/* ================= /fill command export ================= */
+function buildCommands(){
+ const ox=+$("#ox").value||0,oy=+$("#oy").value||0,oz=+$("#oz").value||0,fh=+$("#floorHeight").value||4;
+ const out=[`# ${$("#name").value||"MinePlan build"}`,`# ${W} x ${H} blocks, ${F.length} floor(s). Origin ${ox} ${oy} ${oz}.`,
+  `# Run in order. Check the area is clear first.`,""];
+ let skipped=new Set();
+ F.forEach((f,lev)=>{
+  out.push(`# ---- ${f.name} (Y ${oy+lev*fh}) ----`);
+  let maxh=1;f.hts.forEach(r=>r.forEach(h=>maxh=Math.max(maxh,h)));
+  for(let y=0;y<maxh;y++){
+   for(let z=0;z<H;z++){
+    let x=0;
+    while(x<W){
+     const v=f.cells[z][x],h=f.hts[z][x]||1;
+     if(v==null||h<=y){x++;continue}
+     const id=mcid(C[v][0]);
+     if(!id){skipped.add(C[v][0]);x++;continue}
+     let x2=x;
+     while(x2+1<W&&f.cells[z][x2+1]===v&&(f.hts[z][x2+1]||1)>y)x2++;
+     const Y=oy+lev*fh+y;
+     out.push(x2>x?`fill ${ox+x} ${Y} ${oz+z} ${ox+x2} ${Y} ${oz+z} ${id}`:`setblock ${ox+x} ${Y} ${oz+z} ${id}`);
+     x=x2+1;
+    }
+   }
+  }
+  f.objs.forEach(o=>{if(o.part===2)return;const id=mcid(C[o.i][0]);if(!id){skipped.add(C[o.i][0]);return}
+   const base=f.cells[o.y]?.[o.x]!=null?(f.hts[o.y][o.x]||1):0;
+   out.push(`setblock ${ox+o.x} ${oy+lev*fh+base} ${oz+o.y} ${id}`)});
+  f.rs?.forEach((row,z)=>row.forEach((r,x)=>{if(!r)return;const id=mcid(RS[r.i][0]);if(!id)return;
+   out.push(`setblock ${ox+x} ${oy+lev*fh} ${oz+z} ${id}`)}));
+  out.push("");
+ });
+ if(skipped.size)out.push("# Placed by hand (not real blocks): "+[...skipped].join(", "));
+ return out.join("\n");
+}
+
+/* ================= share link ================= */
+function b64u(bytes){let s="";for(let i=0;i<bytes.length;i+=8192)s+=String.fromCharCode.apply(null,bytes.subarray(i,i+8192));
+ return btoa(s).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"")}
+function unb64u(str){const s=atob(str.replace(/-/g,"+").replace(/_/g,"/"));const b=new Uint8Array(s.length);
+ for(let i=0;i<s.length;i++)b[i]=s.charCodeAt(i);return b}
+async function shareLink(){
+ try{
+  let bytes=new TextEncoder().encode(JSON.stringify(data())),tag="r";
+  if("CompressionStream" in window){
+   const cs=new CompressionStream("deflate-raw");
+   bytes=new Uint8Array(await new Response(new Blob([bytes]).stream().pipeThrough(cs)).arrayBuffer());tag="z";
+  }
+  const url=location.origin+location.pathname+"#"+tag+b64u(bytes);
+  if(url.length>60000)return toast("This build is too big for a link — send the .json file instead",3200);
+  try{await navigator.clipboard.writeText(url);toast("Link copied — paste it to a friend");}
+  catch{prompt("Copy this link:",url)}
+ }catch(err){console.error(err);toast("Could not make a link: "+err.message,3000)}
+}
+async function loadFromHash(){
+ const h=location.hash.slice(1);if(h.length<8)return false;
+ const tag=h[0],body=h.slice(1);if(tag!=="z"&&tag!=="r")return false;
+ try{
+  let bytes=unb64u(body);
+  if(tag==="z"){const ds=new DecompressionStream("deflate-raw");
+   bytes=new Uint8Array(await new Response(new Blob([bytes]).stream().pipeThrough(ds)).arrayBuffer())}
+  load(JSON.parse(new TextDecoder().decode(bytes)));toast("Opened a shared build");return true;
+ }catch(e){console.warn(e);return false}
+}
+
+/* ================= build order mode ================= */
+function computeSteps(){
+ buildSteps=[];
+ F.forEach((f,i)=>{let maxh=0;f.hts.forEach((r,y)=>r.forEach((h,x)=>{if(f.cells[y][x]!=null)maxh=Math.max(maxh,h)}));
+  for(let l=1;l<=Math.max(maxh,1);l++){
+   let n=0;f.cells.forEach((r,y)=>r.forEach((v,x)=>{if(v!=null&&(f.hts[y][x]||1)>=l)n++}));
+   if(n)buildSteps.push({f:i,layer:l,n})}});
+}
+function buildUpdate(){
+ const s=buildSteps[buildAt];if(!s)return;
+ if(fi!==s.f){fi=s.f;labelsDirty=true;floors()}
+ $("#buildLabel").innerHTML=`<b>${F[s.f].name}</b> · layer ${s.layer} · place <b>${s.n}</b> block${s.n>1?"s":""} &nbsp;<span style="color:#9aa8b7;font-weight:400">step ${buildAt+1} of ${buildSteps.length}</span>`;
+ draw();
+}
+function setBuildMode(on){
+ buildMode=on;$("#buildbar").style.display=on?"flex":"none";
+ $("#buildBtn").classList.toggle("active",on);
+ if(on){computeSteps();if(!buildSteps.length){setBuildMode(false);return toast("Place some blocks first")}buildAt=0;buildUpdate()}
+ else draw();
+}
+
+/* ================= save / load / projects ================= */
+function data(){
+ return{v:3.6,id:projectId||(projectId=(crypto.randomUUID?crypto.randomUUID():"p"+Date.now()+Math.random().toString(36).slice(2))),
+  name:$("#name").value,W,H,F,notes:$("#notes").value,
+  origin:{x:+$("#ox").value||0,y:+$("#oy").value||0,z:+$("#oz").value||0},floorHeight:+$("#floorHeight").value||4};
+}
+function migrate(d){
+ if(!d||typeof d!=="object")throw new Error("not a MinePlan file");
+ const nw=clamp(+d.W||40,4,128),nh=clamp(+d.H||30,4,128);
+ if(!Array.isArray(d.F)||!d.F.length)throw new Error("no floors in that file");
+ const floors=d.F.map((f,i)=>{
+  const cells=Array.from({length:nh},(_,y)=>Array.from({length:nw},(_,x)=>{
+   const v=f.cells?.[y]?.[x];return(typeof v==="number"&&v>=0&&v<C.length)?v:null}));
+  const hts=Array.from({length:nh},(_,y)=>Array.from({length:nw},(_,x)=>clamp(+(f.hts?.[y]?.[x])||1,1,12)));
+  const rs=Array.from({length:nh},(_,y)=>Array.from({length:nw},(_,x)=>{
+   const r=f.rs?.[y]?.[x];return(r&&typeof r.i==="number"&&r.i<RS.length)?{i:r.i,r:(+r.r||0)%4}:null}));
+  const objs=(Array.isArray(f.objs)?f.objs:[]).filter(o=>o&&typeof o.i==="number"&&o.i>=0&&o.i<C.length&&o.x<nw&&o.y<nh&&o.x>=0&&o.y>=0)
+   .map(o=>({x:o.x|0,y:o.y|0,i:o.i,r:(+o.r||0)%4,g:o.g||gidSeq++,part:o.part}));
+  const labels=(Array.isArray(f.labels)?f.labels:[]).filter(l=>l&&l.t!=null&&l.x<nw&&l.y<nh)
+   .map(l=>({x:l.x|0,y:l.y|0,t:String(l.t).slice(0,60),auto:!!l.auto}));
+  return{name:String(f.name||("Floor "+(i+1))).slice(0,40),cells,hts,rs,objs,labels};
+ });
+ return{id:d.id,name:String(d.name||"Imported build").slice(0,80),W:nw,H:nh,F:floors,
+  notes:String(d.notes||""),origin:d.origin||{x:0,y:64,z:0},floorHeight:clamp(+d.floorHeight||4,1,24)};
+}
+function load(raw){
+ const d=migrate(raw);
+ projectId=d.id||null;W=d.W;H=d.H;F=d.F;fi=0;
+ $("#name").value=d.name;$("#notes").value=d.notes;$("#gw").value=W;$("#gh").value=H;
+ $("#ox").value=d.origin.x??0;$("#oy").value=d.origin.y??64;$("#oz").value=d.origin.z??0;
+ $("#floorHeight").value=d.floorHeight;
+ undoStack.length=0;future.length=0;pending=null;labelsDirty=true;
+ floors();draw();refresh();
+}
+const LS="mineplan.v3.";
+function backup(silent){
+ try{
+  const d=data();localStorage.setItem(LS+d.id,JSON.stringify(d));
+  const ids=JSON.parse(localStorage.getItem(LS+"index")||"[]");
+  if(!ids.includes(d.id)){ids.push(d.id);localStorage.setItem(LS+"index",JSON.stringify(ids))}
+  dirty=false;if(!silent)flash("Saved in this browser ✓");return true;
+ }catch(err){
+  console.error(err);
+  const msg=/quota|exceeded/i.test(err.name+err.message)
+   ?"Browser storage is full — use Save to keep this build as a file."
+   :"Could not save in the browser: "+err.message;
+  if(!silent)toast(msg,4000);else flash("⚠ autosave failed");
+  return false;
+ }
+}
+function safeName(){return($("#name").value||"Minecraft_Build").replace(/[\\/:*?"<>|]+/g,"_").slice(0,60)+".mineplan.json"}
+async function saveFile(forceNew){
+ const text=JSON.stringify(data(),null,1);
+ try{
+  if("showSaveFilePicker" in window){
+   if(!fileHandle||forceNew){
+    fileHandle=await window.showSaveFilePicker({suggestedName:safeName(),
+     types:[{description:"MinePlan Project",accept:{"application/json":[".json"]}}]});
+   }else{
+    const perm=await fileHandle.queryPermission?.({mode:"readwrite"});
+    if(perm!=="granted"&&await fileHandle.requestPermission?.({mode:"readwrite"})!=="granted")fileHandle=null;
+    if(!fileHandle)return saveFile(true);
+   }
+   const w=await fileHandle.createWritable();await w.write(text);await w.close();
+   flash("Saved to "+(fileHandle.name||"file")+" ✓");dirty=false;backup(true);return;
+  }
+ }catch(e){if(e&&e.name==="AbortError")return;console.error(e);fileHandle=null}
+ const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([text],{type:"application/json"}));
+ a.download=safeName();a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1500);
+ flash("Downloaded ✓");dirty=false;backup(true);
+}
+function thumb(d,cv){
+ const g=cv.getContext("2d"),f=d.F?.[0];g.fillStyle="#10161d";g.fillRect(0,0,cv.width,cv.height);
+ if(!f)return;const s=Math.min(cv.width/d.W,cv.height/d.H);
+ for(let y=0;y<d.H;y++)for(let x=0;x<d.W;x++){const v=f.cells?.[y]?.[x];if(v==null||!C[v])continue;
+  g.fillStyle=C[v][1];g.fillRect(x*s,y*s,Math.max(1,s),Math.max(1,s))}
+}
+function listProjects(){
+ const e=$("#projectList");e.innerHTML="";
+ const ids=[...new Set([...JSON.parse(localStorage.getItem(LS+"index")||"[]"),
+  ...JSON.parse(localStorage.getItem("mineplan.v2.index")||"[]")])];
+ let n=0;
+ ids.forEach(id=>{
+  let d=null,key=LS+id;
+  try{d=JSON.parse(localStorage.getItem(key))}catch{}
+  if(!d){key="mineplan.v2."+id;try{d=JSON.parse(localStorage.getItem(key))}catch{}}
+  if(!d)return;n++;
+  const r=document.createElement("div");r.className="pcard";
+  const cv=document.createElement("canvas");cv.width=132;cv.height=100;
+  try{thumb(d,cv)}catch{}
+  const meta=document.createElement("div");meta.className="meta";
+  meta.innerHTML=`<b>${(d.name||"Untitled").replace(/[<>&]/g,"")}</b><span>${d.W}×${d.H} · ${d.F?.length||1} floor(s) · v${d.v||2}</span>`;
+  const open=document.createElement("button");open.textContent="Open";open.style.flex="none";
+  open.onclick=()=>{try{load(d);projectDialog.close();toast("Opened "+d.name)}catch(err){alert("Could not open that project: "+err.message)}};
+  const del=document.createElement("button");del.textContent="×";del.className="danger";del.style.flex="none";
+  del.onclick=()=>{if(!confirm("Delete “"+(d.name||"this project")+"” from this browser?"))return;
+   localStorage.removeItem(key);
+   ["mineplan.v3.index","mineplan.v2.index"].forEach(ix=>{
+    const a=JSON.parse(localStorage.getItem(ix)||"[]").filter(x=>x!==id);localStorage.setItem(ix,JSON.stringify(a))});
+   listProjects()};
+  r.append(cv,meta,open,del);e.append(r);
+ });
+ if(!n)e.innerHTML="<p class=small>No saved projects in this browser yet. Hit <b>Save</b> or work for a minute and autosave will make one.</p>";
+}
+
+/* ================= PNG export ================= */
+function exportPNG(){
+ const pad=26,head=54,legendRows=Math.min(10,tally("floor").length),legW=200;
+ const out=document.createElement("canvas");
+ out.width=canvas.width+pad*2+legW;out.height=canvas.height+pad*2+head;
+ const g=out.getContext("2d");g.imageSmoothingEnabled=false;
+ g.fillStyle="#131a22";g.fillRect(0,0,out.width,out.height);
+ g.fillStyle="#edf3f8";g.font="bold 20px system-ui";g.fillText($("#name").value||"Minecraft build",pad,34);
+ g.fillStyle="#9aa8b7";g.font="12px system-ui";
+ g.fillText(`${F[fi].name} · ${W} × ${H} blocks · 1 square = 1 block · origin X${$("#ox").value} Z${$("#oz").value}`,pad,50);
+ g.fillStyle="#18202a";g.fillRect(pad,head+pad-8,canvas.width,canvas.height);
+ g.drawImage(canvas,pad,head+pad-8);
+ g.strokeStyle="#46546722";g.strokeRect(pad+.5,head+pad-8.5,canvas.width,canvas.height);
+ F[fi].labels.forEach(l=>{const x=pad+l.x*cell,y=head+pad-8+l.y*cell;
+  g.font="bold 13px system-ui";const w=g.measureText(l.t).width;
+  g.fillStyle="#000a";g.fillRect(x,y+2,w+8,17);g.fillStyle="#fff";g.fillText(l.t,x+4,y+15)});
+ // legend
+ let lx=pad+canvas.width+18,ly=head+pad+6;
+ g.fillStyle="#edf3f8";g.font="bold 13px system-ui";g.fillText("Materials",lx,ly);ly+=18;
+ g.font="12px system-ui";
+ tally("floor").slice(0,legendRows).forEach(([n,q])=>{
+  const i=C.findIndex(c=>c[0]===n);
+  if(i>=0){g.fillStyle=C[i][1];g.fillRect(lx,ly-9,11,11);g.strokeStyle="#0009";g.strokeRect(lx+.5,ly-8.5,11,11)}
+  g.fillStyle="#c8d2dc";g.fillText(n.length>20?n.slice(0,19)+"…":n,lx+17,ly);
+  g.fillStyle="#8b98a7";g.textAlign="right";g.fillText(String(q),lx+legW-24,ly);g.textAlign="left";ly+=17});
+ g.fillStyle="#6f7d8c";g.font="11px system-ui";
+ g.fillText("Made with MinePlan V3.6",pad,out.height-10);
+ // north arrow
+ g.save();g.translate(out.width-46,head+6);g.fillStyle="#9aa8b7";
+ g.beginPath();g.moveTo(0,-2);g.lineTo(6,12);g.lineTo(0,8);g.lineTo(-6,12);g.closePath();g.fill();
+ g.font="bold 11px system-ui";g.fillText("N",-4,-6);g.restore();
+ const a=document.createElement("a");
+ a.download=($("#name").value||"build").replace(/[^\w-]+/g,"_")+"_"+F[fi].name.replace(/[^\w-]+/g,"_")+".png";
+ a.href=out.toDataURL("image/png");a.click();
+}
+
+/* ================= stamps / themes / redstone dialogs ================= */
+function stampIndex(s){const idx={};Object.entries(s.key).forEach(([ch,n])=>{idx[ch]=n===null?null:C.findIndex(c=>c[0]===n)});return idx}
+STAMPS.forEach(s=>{s.idx=stampIndex(s);s.h=s.h||{}});
+function buildStampUI(){
+ const e=$("#stampList");e.innerHTML="";
+ STAMPS.forEach(s=>{
+  const b=document.createElement("button");b.className="stamp";b.type="button";
+  const cv=document.createElement("canvas");cv.width=cv.height=56;
+  const g=cv.getContext("2d");g.fillStyle="#10161d";g.fillRect(0,0,56,56);
+  const sw=s.g[0].length,sh=s.g.length,px=Math.floor(Math.min(56/sw,56/sh)),
+   offx=(56-px*sw)/2,offy=(56-px*sh)/2;
+  s.g.forEach((row,y)=>[...row].forEach((ch,x)=>{const m=s.idx[ch];if(m==null)return;
+   g.fillStyle=C[m][1];g.fillRect(offx+x*px,offy+y*px,px,px)}));
+  b.append(cv);
+  const t=document.createElement("span");t.innerHTML=`<b>${s.n}</b><br>${s.d}`;b.append(t);
+  b.onclick=()=>{stamp=s;stampDialog.close();setTool("pencil");toast("Click on the grid to place the "+s.n);draw()};
+  e.append(b)});
+}
+function buildThemeUI(){
+ const e=$("#themeList");e.innerHTML="";
+ THEMES.forEach(t=>{
+  const d=document.createElement("div");d.className="theme";d.style.cssText+=";background:#1c242e;border:1px solid #33404f;border-radius:7px";
+  d.innerHTML=`<b>${t.n}</b><div class=sws>${t.sw.map(c=>`<span style="background:${c}"></span>`).join("")}</div>`;
+  const row=document.createElement("div");row.className="row";row.style.width="100%";
+  const use=document.createElement("button");use.textContent="Use";
+  use.onclick=()=>{$("#wallMat").value=C.findIndex(c=>c[0]===t.wall);$("#floorMat").value=C.findIndex(c=>c[0]===t.floor);
+   sel=C.findIndex(c=>c[0]===t.floor);palette($("#search").value);selection();themeDialog.close();toast(t.n+" set as your wall & floor")};
+  const skin=document.createElement("button");skin.textContent="Re-skin";skin.className="primary";
+  skin.onclick=()=>{
+   if(!confirm("Swap every block already placed to the "+t.n+" palette? (Undo works.)"))return;
+   beginChange();
+   const map={};C.forEach((c,i)=>{const to=t.map[c[2]];if(to){const j=C.findIndex(q=>q[0]===to);if(j>=0)map[i]=j}});
+   F.forEach(f=>f.cells.forEach((row,y)=>row.forEach((v,x)=>{if(v!=null&&map[v]!=null)f.cells[y][x]=map[v]})));
+   use.onclick();commit();draw();refresh();toast("Re-skinned to "+t.n);
+  };
+  row.append(use,skin);d.append(row);e.append(d)});
+}
+function buildRsUI(){
+ const e=$("#rsPalette");e.innerHTML="";
+ RS.forEach((p,i)=>{
+  const b=document.createElement("button");b.className="stamp"+(i===rsSel?" active":"");b.type="button";
+  b.innerHTML=`<span class=sw style="background:${p[1]};width:26px;height:26px"></span><span>${p[0]}</span>`;
+  b.onclick=()=>{rsSel=i;buildRsUI();rsDialog.close();toast(p[0]+" selected — click on the grid")};
+  e.append(b)});
+}
+
+/* ================= wiring ================= */
+document.querySelectorAll(".tool").forEach(b=>b.onclick=()=>setTool(b.dataset.t));
+$("#search").oninput=e=>palette(e.target.value);
+$("#catChips").innerHTML=`<span class="chip on" data-c="">All</span>`+CATS.map(c=>`<span class=chip data-c="${c}">${c}</span>`).join("");
+$("#catChips").onclick=e=>{const c=e.target.closest(".chip");if(!c)return;
+ catFilter=c.dataset.c;[...$("#catChips").children].forEach(x=>x.classList.toggle("on",x===c));palette($("#search").value)};
+$("#symChips").onclick=e=>{const c=e.target.closest(".chip");if(!c)return;
+ sym=c.dataset.s;[...$("#symChips").children].forEach(x=>x.classList.toggle("on",x===c));draw()};
+$("#curH").oninput=e=>{curH=+e.target.value;$("#curHv").textContent=curH+" tall";selection()};
+$("#showH").onchange=draw;$("#ghost").onchange=draw;$("#chunks").onchange=draw;$("#lightOv").onchange=draw;$("#rsOv").onchange=draw;
+$("#countScope").onchange=counts;$("#floorHeight").onchange=()=>{dirty=true};
+["#ox","#oy","#oz"].forEach(s=>$(s).oninput=draw);
+$("#rotate").onclick=()=>{rot=(rot+1)%4;selection();toast("Next piece faces "+["North","East","South","West"][rot])};
+
+$("#addFloor").onclick=()=>{beginChange();F.push(blank("Floor "+(F.length+1)));fi=F.length-1;commit();labelsDirty=true;floors();draw();refresh()};
+$("#dupFloor").onclick=()=>duplicateFloor(fi);
+$("#renameFloor").onclick=()=>{const n=prompt("Floor name",F[fi].name);if(n){beginChange();F[fi].name=n.slice(0,40);commit();floors()}};
+$("#delFloor").onclick=()=>{if(F.length<2)return toast("You need at least one floor");
+ if(!confirm("Delete “"+F[fi].name+"”?"))return;beginChange();F.splice(fi,1);fi=Math.max(0,fi-1);commit();labelsDirty=true;floors();draw();refresh()};
+
+$("#resize").onclick=()=>{
+ const nw=clamp(+$("#gw").value||W,8,128),nh=clamp(+$("#gh").value||H,8,128);
+ if(nw===W&&nh===H)return;
+ let loss=0;F.forEach(f=>f.cells.forEach((r,y)=>r.forEach((v,x)=>{if(v!=null&&(x>=nw||y>=nh))loss++})));
+ if(loss&&!confirm(`Resizing to ${nw}×${nh} will delete ${loss} block${loss>1?"s":""} outside the new edge. Carry on?`))return;
+ beginChange();W=nw;H=nh;
+ F.forEach(f=>{
+  const oc=f.cells,oh=f.hts,or=f.rs;
+  f.cells=Array.from({length:H},(_,y)=>Array.from({length:W},(_,x)=>oc[y]?.[x]??null));
+  f.hts=Array.from({length:H},(_,y)=>Array.from({length:W},(_,x)=>oh?.[y]?.[x]??1));
+  f.rs=Array.from({length:H},(_,y)=>Array.from({length:W},(_,x)=>or?.[y]?.[x]??null));
+  f.objs=f.objs.filter(o=>o.x<W&&o.y<H);f.labels=f.labels.filter(l=>l.x<W&&l.y<H)});
+ $("#gw").value=W;$("#gh").value=H;commit();labelsDirty=true;draw();refresh();
+};
+function fitZoom(){const vp=$("#viewport");zoom=clamp(+Math.min((vp.clientWidth-70)/(W*cell),(vp.clientHeight-70)/(H*cell)).toFixed(2),.3,3);draw()}
+$("#zoomIn").onclick=()=>{zoom=clamp(+(zoom+.15).toFixed(2),.3,3);draw()};
+$("#zoomOut").onclick=()=>{zoom=clamp(+(zoom-.15).toFixed(2),.3,3);draw()};
+$("#zoomFit").onclick=fitZoom;
+$("#undo").onclick=undo;$("#redo").onclick=redo;
+$("#paste").onclick=()=>{if(!clip)return toast("Copy something first with the Copy tool");
+ clip.pasting=true;setTool("select");toast("Click where the copy should go")};
+$("#stampsBtn").onclick=()=>{buildStampUI();stampDialog.showModal()};
+$("#themeBtn").onclick=()=>{buildThemeUI();themeDialog.showModal()};
+$("#save").onclick=()=>saveFile(false);$("#saveAs").onclick=()=>saveFile(true);
+$("#projects").onclick=()=>{listProjects();projectDialog.showModal()};
+$("#closeProjects").onclick=()=>projectDialog.close();
+$("#newProject").onclick=()=>{
+ if(dirty&&!confirm("Start a new project? Anything unsaved here will be lost."))return;
+ projectId=null;fileHandle=null;W=40;H=30;F=[blank("Floor 1")];fi=0;
+ $("#name").value="New Minecraft Build";$("#notes").value="";$("#gw").value=40;$("#gh").value=30;
+ undoStack.length=0;future.length=0;dirty=false;labelsDirty=true;floors();draw();refresh();projectDialog.close()};
+$("#import").onchange=e=>{
+ const file=e.target.files[0];if(!file)return;fileHandle=null;
+ const r=new FileReader();
+ r.onload=()=>{try{load(JSON.parse(r.result));toast("Imported "+file.name)}
+  catch(err){alert("That file could not be opened:\n"+err.message)}};
+ r.readAsText(file);e.target.value="";
+};
+$("#png").onclick=exportPNG;
+$("#mode").onclick=()=>{blueprint=!blueprint;$("#mode").textContent=blueprint?"Build View":"Blueprint";$("#mode").classList.toggle("active",blueprint);draw()};
+$("#preview3d").onclick=()=>{previewDialog.showModal();isoRender()};
+$("#closePreview").onclick=()=>previewDialog.close();
+$("#isoRot").onclick=()=>{isoDir=(isoDir+1)%4;isoRender()};
+$("#isoPng").onclick=()=>{const a=document.createElement("a");
+ a.download=($("#name").value||"build").replace(/[^\w-]+/g,"_")+"_3d.png";a.href=$("#iso").toDataURL("image/png");a.click()};
+$("#shopBtn").onclick=()=>{shopRender();shopDialog.showModal()};
+$("#shopScope").onchange=shopRender;$("#shopStacks").onchange=shopRender;
+$("#closeShop").onclick=()=>shopDialog.close();$("#shopPrint").onclick=()=>window.print();
+$("#cmdBtn").onclick=()=>{$("#cmds").value=buildCommands();cmdDialog.showModal()};
+$("#closeCmds").onclick=()=>cmdDialog.close();
+$("#copyCmds").onclick=async()=>{try{await navigator.clipboard.writeText($("#cmds").value);toast("Commands copied")}
+ catch{$("#cmds").select();document.execCommand("copy");toast("Commands copied")}};
+$("#dlCmds").onclick=()=>{const a=document.createElement("a");
+ a.href=URL.createObjectURL(new Blob([$("#cmds").value],{type:"text/plain"}));
+ a.download=($("#name").value||"build").replace(/[^\w-]+/g,"_")+".mcfunction";a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1500)};
+$("#shareBtn").onclick=shareLink;
+$("#closeStamps").onclick=()=>stampDialog.close();
+$("#closeThemes").onclick=()=>themeDialog.close();
+$("#closeRs").onclick=()=>rsDialog.close();
+$("#buildBtn").onclick=()=>setBuildMode(!buildMode);
+$("#bExit").onclick=()=>setBuildMode(false);
+$("#bNext").onclick=()=>{buildAt=Math.min(buildAt+1,buildSteps.length-1);buildUpdate()};
+$("#bPrev").onclick=()=>{buildAt=Math.max(buildAt-1,0);buildUpdate()};
+$("#name").oninput=()=>{dirty=true};$("#notes").oninput=()=>{dirty=true};
+
+/* ================= keyboard ================= */
+const TOOLKEY={"1":"pencil","2":"erase","3":"wall","4":"room","5":"fill","6":"object","7":"label","8":"select","9":"window","0":"move","h":"height","r":"redstone"};
+document.addEventListener("keydown",e=>{
+ const t=e.target.tagName;
+ if(t==="INPUT"||t==="TEXTAREA"||t==="SELECT"){
+  if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="s"){e.preventDefault();saveFile(false)}
+  return}
+ const mod=e.ctrlKey||e.metaKey;
+ if(mod&&e.key.toLowerCase()==="s"){e.preventDefault();saveFile(false);return}
+ if(mod&&e.key.toLowerCase()==="z"&&!e.shiftKey){e.preventDefault();undo();return}
+ if(mod&&(e.key.toLowerCase()==="y"||(e.key.toLowerCase()==="z"&&e.shiftKey))){e.preventDefault();redo();return}
+ if(mod)return;
+ if(e.key==="Escape"){
+  if(moveObj){placeObject(moveObj.ox|0,moveObj.oy|0,moveObj.i,moveObj.r);moveObj=null;refresh();toast("Put it back where it was")}
+  stamp=null;if(clip)clip.pasting=false;drag=null;dragTo=null;$("#paste").classList.remove("active");
+  if(buildMode)setBuildMode(false);
+  document.querySelectorAll("dialog[open]").forEach(d=>d.close());draw();return}
+ const k=e.key.toLowerCase();
+ if(TOOLKEY[k]!==undefined){setTool(TOOLKEY[k]);return}
+ if(k==="v"){$("#mode").click();return}
+ if(k==="p"){$("#preview3d").click();return}
+ if(k==="b"){$("#buildBtn").click();return}
+ if(k==="f"){fitZoom();return}
+ if(e.key==="["){if(fi>0){fi--;labelsDirty=true;floors();draw();refresh()}return}
+ if(e.key==="]"){if(fi<F.length-1){fi++;labelsDirty=true;floors();draw();refresh()}return}
+ if(k==="+"||k==="="){$("#zoomIn").click();return}
+ if(k==="-"){$("#zoomOut").click();return}
+ if(buildMode&&(e.key==="ArrowRight"||e.key===" ")){e.preventDefault();$("#bNext").click()}
+ if(buildMode&&e.key==="ArrowLeft"){e.preventDefault();$("#bPrev").click()}
+});
+
+/* ================= autosave & exit guard ================= */
+setInterval(()=>{if(dirty&&(F.some(f=>f.objs.length)||F.some(f=>f.cells.some(r=>r.some(v=>v!=null)))))backup(true)},15000);
+window.addEventListener("beforeunload",e=>{if(!dirty)return;e.preventDefault();e.returnValue=""});
+document.addEventListener("visibilitychange",()=>{if(document.hidden&&dirty)backup(true)});
+
+/* ================= stay on the newest version =================
+ GitHub Pages caches HTML, so an uploaded update can keep serving stale to a
+ browser that already has the page. We re-fetch our own URL with no-store,
+ compare the build marker, and offer a cache-busting reload. */
+const BUILD_MARK=/name="mineplan-build"\s+content="([^"]+)"/;
+let newBuild=null;
+async function checkForUpdate(manual){
+ if(location.protocol==="file:"){if(manual)toast("Opened from a file, so there's nothing to check against");return}
+ try{
+  const r=await fetch(location.pathname+"?_probe="+Date.now(),{cache:"no-store"});
+  if(!r.ok)return;
+  const m=(await r.text()).match(BUILD_MARK);
+  if(!m)return;
+  if(m[1]!==BUILD){
+   newBuild=m[1];
+   $("#updNote").textContent="You have "+BUILD+" · newest is "+m[1];
+   $("#updbar").style.display="flex";
+  }else if(manual)toast("You're on the newest version ("+BUILD+")");
+ }catch(e){/* offline is fine — carry on with what's loaded */}
+}
+$("#updLater").onclick=()=>{$("#updbar").style.display="none"};
+$("#updNow").onclick=()=>{
+ if(dirty)backup(true);                      // never lose the build over an upgrade
+ dirty=false;                                // suppress the exit prompt
+ const clean=location.pathname+"?v="+(newBuild||Date.now())+location.hash;
+ location.replace(clean);                    // new URL ⇒ guaranteed fresh document
+};
+$("#logo").title="MinePlan build "+BUILD+" — click to check for updates";
+$("#logo").style.cursor="pointer";
+$("#logo").onclick=()=>checkForUpdate(true);
+setTimeout(()=>checkForUpdate(false),2500);
+setInterval(()=>checkForUpdate(false),30*60*1000);
+document.addEventListener("visibilitychange",()=>{if(!document.hidden)checkForUpdate(false)});
+
+/* ================= resizable panels ================= */
+const PANEL_DEF={l:300,r:272},PANEL_MIN={l:196,r:190},PANEL_MAX={l:560,r:470};
+function setPanel(side,px){
+ const v=clamp(Math.round(px),PANEL_MIN[side],PANEL_MAX[side]);
+ document.querySelector(".app").style.setProperty(side==="l"?"--lw":"--rw",v+"px");
+ try{localStorage.setItem("mineplan.panel."+side,v)}catch{}
+ return v;
+}
+["l","r"].forEach(side=>{
+ try{const saved=+localStorage.getItem("mineplan.panel."+side);if(saved)setPanel(side,saved)}catch{}
+ const h=document.querySelector(`.resizer[data-side="${side}"]`);if(!h)return;
+ h.addEventListener("pointerdown",e=>{
+  e.preventDefault();h.setPointerCapture(e.pointerId);h.classList.add("dragging");
+  const app=document.querySelector(".app").getBoundingClientRect();
+  const mv=m=>setPanel(side,side==="l"?m.clientX-app.left:app.right-m.clientX);
+  const up=()=>{h.classList.remove("dragging");h.removeEventListener("pointermove",mv);h.removeEventListener("pointerup",up);draw()};
+  h.addEventListener("pointermove",mv);h.addEventListener("pointerup",up);
+ });
+ h.addEventListener("dblclick",()=>{setPanel(side,PANEL_DEF[side]);draw()});
+});
+
+/* ================= init ================= */
+(function init(){
+ const opts=C.map((b,i)=>`<option value="${i}">${b[0]}</option>`).join("");
+ $("#wallMat").innerHTML=opts;$("#floorMat").innerHTML=opts;
+ $("#wallMat").value=C.findIndex(x=>x[0]==="Stone Bricks");
+ $("#floorMat").value=C.findIndex(x=>x[0]==="Oak Planks");
+ sel=C.findIndex(x=>x[0]==="Oak Planks");
+ buildRsUI();palette();floors();refresh();draw();
+ loadFromHash().then(ok=>{
+  if(ok)return;
+  try{
+   const ids=JSON.parse(localStorage.getItem(LS+"index")||"[]");
+   if(ids.length){
+    const last=JSON.parse(localStorage.getItem(LS+ids[ids.length-1]));
+    if(last&&last.F&&confirm(`Pick up where you left off?\n\n“${last.name}” — ${last.W}×${last.H}, ${last.F.length} floor(s)`))load(last);
+   }
+  }catch(err){console.warn(err)}
+  dirty=false;
+ });
+ // drop the ?v= cache-buster so the bookmarked URL stays clean
+ if(/[?&](v|_probe)=/.test(location.search)){
+  try{window.history.replaceState(null,"",location.pathname+location.hash)}catch{}
+ }
+ window.addEventListener("resize",()=>draw());
+})();
+</script></body></html>

@@ -1,0 +1,3 @@
+# MinePlan is unlisted: reachable by link, but not indexed.
+User-agent: *
+Disallow: /
