@@ -4,9 +4,9 @@
 <meta name="theme-color" content="#121820">
 <meta name="description" content="MinePlan — a block-by-block planner for Minecraft builds.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='10' fill='%23171d25'/%3E%3Crect x='10' y='34' width='44' height='8' fill='%23b88752'/%3E%3Crect x='10' y='42' width='44' height='8' fill='%238a6340'/%3E%3Crect x='22' y='14' width='20' height='20' fill='%2377c45a'/%3E%3Crect x='26' y='18' width='12' height='12' fill='%2365a84a'/%3E%3C/svg%3E">
-<title>MinePlan V3.7</title>
+<title>MinePlan V3.9</title>
 <!-- ===== bump this ONE line when you upload a new version ===== -->
-<meta name="mineplan-build" content="2026-09-17.2">
+<meta name="mineplan-build" content="2026-09-17.4">
 <style>
 :root{--bg:#0d1117;--p:#171d25;--p2:#202833;--line:#344050;--txt:#edf3f8;--mut:#9aa8b7;--green:#65a84a;--acc:#77c45a}
 *{box-sizing:border-box}
@@ -104,7 +104,7 @@ textarea#cmds{width:100%;height:46vh;font:11.5px ui-monospace,Consolas,monospace
 @media (max-width:640px){.app{grid-template-columns:var(--lw,190px) 6px minmax(0,1fr);--lw:190px}.right,.resizer[data-side=r]{display:none}}
 </style></head><body>
 <header>
-<div class="logo" id="logo" title="">⛏ Mine<b>Plan V3.7</b></div>
+<div class="logo" id="logo" title="">⛏ Mine<b>Plan V3.9</b></div>
 <input id="name" value="My Minecraft Build" aria-label="Project name">
 <button id="projects" title="Open the project library">Projects</button>
 <button id="save" class="primary" title="Save to a file (Ctrl+S)">Save</button>
@@ -221,7 +221,7 @@ textarea#cmds{width:100%;height:46vh;font:11.5px ui-monospace,Consolas,monospace
 
 <dialog id="previewDialog" style="width:min(940px,94vw)"><h2>Isometric Build Preview</h2>
  <canvas id="iso" width="880" height="560" style="width:100%;background:#10161d;border:1px solid #435166;border-radius:6px"></canvas>
- <div class="row" style="margin-top:10px"><button id="isoRot">↻ Rotate view</button><button id="isoPng">Save as PNG</button><span class="spacer"></span><button id="closePreview">Close</button></div>
+ <div class="row" style="margin-top:10px"><button id="isoRot">↻ Rotate view</button><button id="isoPng">Save as PNG</button><label class="inline fixed" style="flex:none"><input type="checkbox" id="isoTex" checked> Textured blocks</label><span class="spacer"></span><button id="closePreview">Close</button></div>
  <p class="small">Built from the block heights you set. Blocks with a height of 1 are floors; taller ones become walls and towers.</p></dialog>
 
 <dialog id="shopDialog" style="width:min(560px,94vw)"><h2>Shopping List</h2>
@@ -264,7 +264,7 @@ textarea#cmds{width:100%;height:46vh;font:11.5px ui-monospace,Consolas,monospace
 <div id="hoverTip"></div>
 <script>
 "use strict";
-const VERSION="3.7";
+const VERSION="3.9";
 const BUILD=document.querySelector('meta[name="mineplan-build"]')?.content||"dev";
 /* ---------- material table ---------- */
 const C=[
@@ -437,6 +437,890 @@ function rgba(hex,a){const[r,g,b]=rgb(hex);return`rgba(${r},${g},${b},${a})`}
 function hashStr(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)}return h>>>0}
 function mulberry(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
 
+/* ===================== object sprites =====================
+ 16x16 pixel art, one character per pixel. Keys "1" "2" "3" mean
+ "this block's own colour", a shade of it, and a highlight of it —
+ so one template covers all 13 doors, all 12 trapdoors, every bed, etc.
+ Edit a letter, the icon changes. */
+const SP_PAL={
+ " ":null,".":null,
+ "K":"#16100a","k":"#2f2318","D":"#4a2f1c","m":"#6b4a2c",
+ "o":"#8a5a30","O":"#b87a45","w":"#c8935b","W":"#d6c48b",
+ "c":"#c07a4a","C":"#cd8a58",
+ "d":"#44494d","s":"#7b7f84","S":"#9a9ea3","i":"#b9c0c4","I":"#e6ebed",
+ "g":"#d6a43b","G":"#588d46","Y":"#e7bd24","e":"#45b86d","y":"#c5b65c",
+ "f":"#e2703a","F":"#ffd070","r":"#a43a3a","R":"#c94b4b",
+ "b":"#3457a0","B":"#5fa7c8","p":"#40294a","P":"#8564b8",
+ "n":"#2c7773","t":"#49a9a5","L":"#a8d5c8","v":"#9bcbd0",
+ "x":"#e6e1d8","X":"#f7f4ee","h":"#15383d","q":"#985441","z":"#c6402f"
+};
+const SPRITES={
+"Crafting Table":[
+"KKKKKKKKKKKKKKKK",
+"KWWOOOOOOOOOOWWK",
+"KWWOOOOOOOOOOWWK",
+"KOODDDDDDDDDDOOK",
+"KOODccDccDccDOOK",
+"KOODccDccDccDOOK",
+"KOODDDDDDDDDDOOK",
+"KOODccDccDccDOOK",
+"KOODccDccDccDOOK",
+"KOODDDDDDDDDDOOK",
+"KOODccDccDccDOOK",
+"KOODccDccDccDOOK",
+"KOODDDDDDDDDDOOK",
+"KWWOOOOOOOOOOWWK",
+"KWWOOOOOOOOOOWWK",
+"KKKKKKKKKKKKKKKK"],
+
+"Barrel":[
+"KKKKKKKKKKKKKKKK",
+"KooooooooooooooK",
+"KoDDDDDDDDDDDDoK",
+"KoDmmmmmmmmmmDoK",
+"KoDmOOOOOOOOmDoK",
+"KoDmOwwwwwwOmDoK",
+"KoDmOwDDDDwOmDoK",
+"KoDmOwDkkDwOmDoK",
+"KoDmOwDkkDwOmDoK",
+"KoDmOwDDDDwOmDoK",
+"KoDmOwwwwwwOmDoK",
+"KoDmOOOOOOOOmDoK",
+"KoDmmmmmmmmmmDoK",
+"KoDDDDDDDDDDDDoK",
+"KooooooooooooooK",
+"KKKKKKKKKKKKKKKK"],
+
+"Chest":[
+"KKKKKKKKKKKKKKKK",
+"KooooooooooooooK",
+"KoOOOOOOOOOOOOoK",
+"KoOwwwwwwwwwwOoK",
+"KoOwoooooooowOoK",
+"KoOwoooooooowOoK",
+"KoOwoooooooowOoK",
+"KoOwoooooooowOoK",
+"KoODDDDDDDDDDOoK",
+"KoODDDDDDDDDDOoK",
+"KoOwoooooooowOoK",
+"KoOwoo.gg.oowOoK",
+"KoOwoo.gg.oowOoK",
+"KoOOOOOOOOOOOOoK",
+"KooooooooooooooK",
+"KKKKKKKKKKKKKKKK"],
+
+"Furnace":[
+"KKKKKKKKKKKKKKKK",
+"KssssssssssssssK",
+"KsSSSSSSSSSSSSsK",
+"KsSssssssssssSsK",
+"KsSsdddddddddSsK",
+"KsSsdkkkkkkkdSsK",
+"KsSsdkfffffkdSsK",
+"KsSsdkfFFFfkdSsK",
+"KsSsdkfFFFfkdSsK",
+"KsSsdkfffffkdSsK",
+"KsSsdkkkkkkkdSsK",
+"KsSsdddddddddSsK",
+"KsSssssssssssSsK",
+"KsSSSSSSSSSSSSsK",
+"KssssssssssssssK",
+"KKKKKKKKKKKKKKKK"],
+
+"Smoker":[
+"KKKKKKKKKKKKKKKK",
+"KmmmmmmmmmmmmmmK",
+"KmDDDDDDDDDDDDmK",
+"KmDkkkkkkkkkkDmK",
+"KmDkSSSSSSSSkDmK",
+"KmDkdddddddSkDmK",
+"KmDkSSSSSSSSkDmK",
+"KmDkdddddddSkDmK",
+"KmDkSSSSSSSSkDmK",
+"KmDkdddddddSkDmK",
+"KmDkSSSSSSSSkDmK",
+"KmDkkkkkkkkkkDmK",
+"KmDDDDDDDDDDDDmK",
+"KmmmmmmmmmmmmmmK",
+"KmmmmmmmmmmmmmmK",
+"KKKKKKKKKKKKKKKK"],
+
+"Stonecutter":[
+"KKKKKKKKKKKKKKKK",
+"KssssssssssssssK",
+"KsSSSSSSSSSSSSsK",
+"KsSssssssssssSsK",
+"KsSsss.II.sssSsK",
+"KsSss.IiiI.ssSsK",
+"KsSs.IiddiI.sSsK",
+"KsSs.Iid.diI.SsK",
+"KsSs.Iid.diI.SsK",
+"KsSs.IiddiI.sSsK",
+"KsSss.IiiI.ssSsK",
+"KsSsss.II.sssSsK",
+"KsSssssssssssSsK",
+"KsSSSSSSSSSSSSsK",
+"KssssssssssssssK",
+"KKKKKKKKKKKKKKKK"],
+
+"Cartography Table":[
+"KKKKKKKKKKKKKKKK",
+"KmmmmmmmmmmmmmmK",
+"KmDDDDDDDDDDDDmK",
+"KmDxxxxxxxxxxDmK",
+"KmDxWWWWWWWWxDmK",
+"KmDxWkkkkkkWxDmK",
+"KmDxWkGGkkkWxDmK",
+"KmDxWkGGGkkWxDmK",
+"KmDxWkkGGkkWxDmK",
+"KmDxWkkkkkkWxDmK",
+"KmDxWWWWWWWWxDmK",
+"KmDxxxxxxIIIxDmK",
+"KmDDDDDDDIIDDDmK",
+"KmmmmmmmmmmmmmmK",
+"KmmmmmmmmmmmmmmK",
+"KKKKKKKKKKKKKKKK"],
+
+"Loom":[
+"KKKKKKKKKKKKKKKK",
+"KWWWWWWWWWWWWWWK",
+"KWmmmmmmmmmmmmWK",
+"KWmDDDDDDDDDDmWK",
+"KWmDooooooooDmWK",
+"KWmDoXXXXXXoDmWK",
+"KWmDoXkkkkXoDmWK",
+"KWmDoXkXXkXoDmWK",
+"KWmDoXkXXkXoDmWK",
+"KWmDoXkkkkXoDmWK",
+"KWmDoXXXXXXoDmWK",
+"KWmDooooooooDmWK",
+"KWmDDDDDDDDDDmWK",
+"KWmmmmmmmmmmmmWK",
+"KWWWWWWWWWWWWWWK",
+"KKKKKKKKKKKKKKKK"],
+
+"Smithing Table":[
+"KKKKKKKKKKKKKKKK",
+"KddddddddddddddK",
+"KdkkkkkkkkkkkkdK",
+"KdkddddddddddkdK",
+"Kdkdiiii..ddikdK",
+"KdkdiIIiddiikdK.",
+"KdkdiiiidiiidkdK",
+"KdkddiidiiiddkdK",
+"KdkdddiiiidddkdK",
+"KdkddiiiiiiddkdK",
+"KdkdiiiiiiiidkdK",
+"KdkddddddddddkdK",
+"KdkkkkkkkkkkkkdK",
+"KddddddddddddddK",
+"KddddddddddddddK",
+"KKKKKKKKKKKKKKKK"],
+
+"Fletching Table":[
+"KKKKKKKKKKKKKKKK",
+"KWWWWWWWWWWWWWWK",
+"KWmmmmmmmmmmmmWK",
+"KWmWWWWWWWWWWmWK",
+"KWmWkkkkkkkkWmWK",
+"KWmWkIIIIIIkWmWK",
+"KWmWkkkkkIIkWmWK",
+"KWmWkWWWkIIkWmWK",
+"KWmWkWWWkIkkWmWK",
+"KWmWkkkkkkkkWmWK",
+"KWmWWWWWWWWWWmWK",
+"KWmmmmmmmmmmmmWK",
+"KWWWWWWWWWWWWWWK",
+"KWWWWWWWWWWWWWWK",
+"KWWWWWWWWWWWWWWK",
+"KKKKKKKKKKKKKKKK"],
+
+"Anvil":[
+"KKKKKKKKKKKKKKKK",
+"K..dddddddddd..K",
+"K.dddddddddddd.K",
+"KddiiiiiiiiiiddK",
+"KdiiIIIIIIIIiidK",
+"KdiiIIIIIIIIiidK",
+"KddiiiiiiiiiiddK",
+"K.ddiiiiiiiiddK.",
+"K...ddiiiidd...K",
+"K...ddiiiidd...K",
+"K..dddiiiiddd..K",
+"K.dddiiiiiiddd.K",
+"KddiiiiiiiiiiddK",
+"KdiiiiiiiiiiiidK",
+"KddddddddddddddK",
+"KKKKKKKKKKKKKKKK"],
+
+"Enchanting Table":[
+"KKKKKKKKKKKKKKKK",
+"KppppppppppppppK",
+"KpkkkkkkkkkkkkpK",
+"KpkppppppppppkpK",
+"KpkpRRRRRRRRpkpK",
+"KpkpRXXXXXXRpkpK",
+"KpkpRXPPPPXRpkpK",
+"KpkpRXPXXPXRpkpK",
+"KpkpRXPXXPXRpkpK",
+"KpkpRXPPPPXRpkpK",
+"KpkpRXXXXXXRpkpK",
+"KpkpRRRRRRRRpkpK",
+"KpkppppppppppkpK",
+"KpkkkkkkkkkkkkpK",
+"KppppppppppppppK",
+"KKKKKKKKKKKKKKKK"],
+
+"Cauldron":[
+"KKKKKKKKKKKKKKKK",
+"KddddddddddddddK",
+"KdSSSSSSSSSSSSdK",
+"KdSddddddddddSdK",
+"KdSdBBBBBBBBdSdK",
+"KdSdBvvvvvvBdSdK",
+"KdSdBvBBBBvBdSdK",
+"KdSdBvBBBBvBdSdK",
+"KdSdBvBBBBvBdSdK",
+"KdSdBvBBBBvBdSdK",
+"KdSdBvvvvvvBdSdK",
+"KdSdBBBBBBBBdSdK",
+"KdSddddddddddSdK",
+"KdSSSSSSSSSSSSdK",
+"KddddddddddddddK",
+"KKKKKKKKKKKKKKKK"],
+
+"Brewing Stand":[
+"KKKKKKKKKKKKKKKK",
+"KssssssssssssssK",
+"KsddddddddddddsK",
+"KsdssssssssssdsK",
+"KsdsSS.gg.SSsdsK",
+"KsdsSSSggSSSsdsK",
+"KsdssSSggSSssdsK",
+"KsdsssSggSsssdsK",
+"KsdsSSSggSSSsdsK",
+"KsdsSSsggsSSsdsK",
+"KsdsSSsggsSSsdsK",
+"KsdssssggssssdsK",
+"KsdssssssssssdsK",
+"KsddddddddddddsK",
+"KssssssssssssssK",
+"KKKKKKKKKKKKKKKK"],
+
+"Grindstone":[
+"KKKKKKKKKKKKKKKK",
+"KmmddddddddddmmK",
+"KmmdssssssssdmmK",
+"KddssSSSSSSssddK",
+"KmdsSSddddSSsdmK",
+"KmdsSdddddddSdmK",
+"KmdsSddSSddddsdK",
+"KmdsSdSIISddsdmK",
+"KmdsSdSIISddsdmK",
+"KmdsSddSSddddsdK",
+"KmdsSdddddddSdmK",
+"KmdsSSddddSSsdmK",
+"KddssSSSSSSssddK",
+"KmmdssssssssdmmK",
+"KmmddddddddddmmK",
+"KKKKKKKKKKKKKKKK"],
+
+"Bookshelf":[
+"KKKKKKKKKKKKKKKK",
+"KooooooooooooooK",
+"KoOOOOOOOOOOOOoK",
+"KoODDDDDDDDDDOoK",
+"KoODrRbBgGyYDOoK",
+"KoODrRbBgGyYDOoK",
+"KoODDDDDDDDDDOoK",
+"KoODbBgGrRxXDOoK",
+"KoODbBgGrRxXDOoK",
+"KoODDDDDDDDDDOoK",
+"KoODgGyYbBrRDOoK",
+"KoODgGyYbBrRDOoK",
+"KoODDDDDDDDDDOoK",
+"KoOOOOOOOOOOOOoK",
+"KooooooooooooooK",
+"KKKKKKKKKKKKKKKK"],
+
+"Lectern":[
+"KKKKKKKKKKKKKKKK",
+"K....mmmmmm....K",
+"K...mmoooomm...K",
+"K..mmoooooomm..K",
+"K.mmoDDDDDDomm.K",
+"KmmoDDxxxxDDommK",
+"KmoDDxxXXxxDDomK",
+"KmoDxxXXXXxxDomK",
+"KmoDxxXXXXxxDomK",
+"KmoDDxxXXxxDDomK",
+"KmmoDDxxxxDDommK",
+"K.mmoDDDDDDomm.K",
+"K..mmoooooomm..K",
+"K...mmoooomm...K",
+"K....mmmmmm....K",
+"KKKKKKKKKKKKKKKK"],
+
+"Jukebox":[
+"KKKKKKKKKKKKKKKK",
+"KmmmmmmmmmmmmmmK",
+"KmDDDDDDDDDDDDmK",
+"KmDoooooooooooDK",
+"KmDookkkkkkooDmK",
+"KmDokkddddkkoDmK",
+"KmDokdddddddkDmK",
+"KmDokddSSdddkDmK",
+"KmDokddSSdddkDmK",
+"KmDokdddddddkDmK",
+"KmDokkddddkkoDmK",
+"KmDookkkkkkooDmK",
+"KmDoooooooooooDK",
+"KmDDDDDDDDDDDDmK",
+"KmmmmmmmmmmmmmmK",
+"KKKKKKKKKKKKKKKK"],
+
+"Note Block":[
+"KKKKKKKKKKKKKKKK",
+"KmmmmmmmmmmmmmmK",
+"KmoooooooooooooK",
+"KmoDDDDDDDDDDomK",
+"KmoDkk.kk.kkDomK",
+"KmoDkk.kk.kkDomK",
+"KmoD.kk.kk.kDomK",
+"KmoDkk.kk.kkDomK",
+"KmoDkk.kk.kkDomK",
+"KmoD.kk.kk.kDomK",
+"KmoDkk.kk.kkDomK",
+"KmoDDDDDDDDDDomK",
+"KmoooooooooooooK",
+"KmmmmmmmmmmmmmmK",
+"KmmmmmmmmmmmmmmK",
+"KKKKKKKKKKKKKKKK"],
+
+"Composter":[
+"KKKKKKKKKKKKKKKK",
+"KooooooooooooooK",
+"KoOOOOOOOOOOOOoK",
+"KoODDDDDDDDDDOoK",
+"KoODkkkkkkkkDOoK",
+"KoODkGGeeGGkDOoK",
+"KoODkGeGGeGkDOoK",
+"KoODkeGGGGekDOoK",
+"KoODkeGGGGekDOoK",
+"KoODkGeGGeGkDOoK",
+"KoODkGGeeGGkDOoK",
+"KoODkkkkkkkkDOoK",
+"KoODDDDDDDDDDOoK",
+"KoOOOOOOOOOOOOoK",
+"KooooooooooooooK",
+"KKKKKKKKKKKKKKKK"],
+
+"Beehive":[
+"KKKKKKKKKKKKKKKK",
+"KWWWWWWWWWWWWWWK",
+"KWmmmmmmmmmmmmWK",
+"KWmggggggggggmWK",
+"KWmg.gg..gg.gmWK",
+"KWmggkggkggkgmWK",
+"KWmg.gg..gg.gmWK",
+"KWmggkggkggkgmWK",
+"KWmg.gg..gg.gmWK",
+"KWmggkggkggkgmWK",
+"KWmg.gg..gg.gmWK",
+"KWmggggggggggmWK",
+"KWmmmmmmmmmmmmWK",
+"KWWWWWWWWWWWWWWK",
+"KWWWWWWWWWWWWWWK",
+"KKKKKKKKKKKKKKKK"],
+
+"Bell":[
+"KKKKKKKKKKKKKKKK",
+"K.....dddd.....K",
+"K....dggggd....K",
+"K...dggggggd...K",
+"K..dgggFFgggd..K",
+"K..dggFFFFggd..K",
+"K.dgggFFFFgggd.K",
+"K.dggggFFggggd.K",
+"K.dggggggggggd.K",
+"K.dggggggggggd.K",
+"KdggggggggggggdK",
+"KdggggggggggggdK",
+"KddddddddddddddK",
+"K..dkkkkkkkkd..K",
+"K....dddddd....K",
+"KKKKKKKKKKKKKKKK"],
+
+"Hopper":[
+"KKKKKKKKKKKKKKKK",
+"KddddddddddddddK",
+"KdssssssssssssdK",
+"KdsddddddddddsdK",
+"KdsdkkkkkkkkdsdK",
+"KdsdkddddddkdsdK",
+"KdsdkdssssdkdsdK",
+"KdsdkdsddsdkdsdK",
+"KdsdkdsddsdkdsdK",
+"KdsdkdssssdkdsdK",
+"KdsdkddddddkdsdK",
+"KdsdkkkkkkkkdsdK",
+"KdsddddddddddsdK",
+"KdssssssssssssdK",
+"KddddddddddddddK",
+"KKKKKKKKKKKKKKKK"],
+
+"Cake":[
+"KKKKKKKKKKKKKKKK",
+"K..XXXXXXXXXX..K",
+"K.XXXXXXXXXXXX.K",
+"KXXXRXXXRXXXRXXK",
+"KXXRRRXRRRXRRRXK",
+"KXXXRXXXRXXXRXXK",
+"KXXXXXXXXXXXXXXK",
+"KXXXXXXXXXXXXXXK",
+"KXXXXXXXXXXXXXXK",
+"KXXXXXXXXXXXXXXK",
+"KXXXXXXXXXXXXXXK",
+"KwwwwwwwwwwwwwwK",
+"KwwwwwwwwwwwwwwK",
+"K.wwwwwwwwwwww.K",
+"K..wwwwwwwwww..K",
+"KKKKKKKKKKKKKKKK"],
+
+"Flower Pot":[
+"KKKKKKKKKKKKKKKK",
+"K..qqqqqqqqqq..K",
+"K.qqqqqqqqqqqq.K",
+"KqqkkkkkkkkkkqqK",
+"KqkkDDDDDDDDkkqK",
+"KqkDDGGGGGGDDkqK",
+"KqkDGGeeeeGGDkqK",
+"KqkDGeeReeeGDkqK",
+"KqkDGeeRReeGDkqK",
+"KqkDGGeeeeGGDkqK",
+"KqkDDDDDDDDDDkqK",
+"KqqkkkkkkkkkkqqK",
+"K.qqqqqqqqqqqq.K",
+"K..qqqqqqqqqq..K",
+"K...qqqqqqqq...K",
+"KKKKKKKKKKKKKKKK"],
+
+"Armor Stand":[
+"KKKKKKKKKKKKKKKK",
+"K......WW......K",
+"K.....WWWW.....K",
+"K......WW......K",
+"K.WWWWWWWWWWWW.K",
+"KWWWWWWWWWWWWWWK",
+"K.WWWWWWWWWWWW.K",
+"K......WW......K",
+"K......WW......K",
+"K......WW......K",
+"K.....WWWW.....K",
+"K....WWWWWW....K",
+"K..WWWWWWWWWW..K",
+"K.WWWWWWWWWWWW.K",
+"K..WWWWWWWWWW..K",
+"KKKKKKKKKKKKKKKK"],
+
+"Ladder":[
+"KKKKKKKKKKKKKKKK",
+"K.WW......WW...K",
+"K.WW......WW...K",
+"K.WWWWWWWWWW...K",
+"K.WWWWWWWWWW...K",
+"K.WW......WW...K",
+"K.WW......WW...K",
+"K.WWWWWWWWWW...K",
+"K.WWWWWWWWWW...K",
+"K.WW......WW...K",
+"K.WW......WW...K",
+"K.WWWWWWWWWW...K",
+"K.WWWWWWWWWW...K",
+"K.WW......WW...K",
+"K.WW......WW...K",
+"KKKKKKKKKKKKKKKK"]
+};
+
+/* Templates keyed by name pattern. "1" = the block's own colour,
+ "2" = a shade of it, "3" = a highlight — one template, every variant. */
+const SPRITE_RULES=[
+["Fence",[
+"................",
+".KK1K......K1KK.",
+".K111K....K111K.",
+".K1331K..K1331K.",
+".K13331KK13331K.",
+"KK133333333331KK",
+"K11333333333311K",
+"K11111111111111K",
+"K11111111111111K",
+"K11333333333311K",
+"KK133333333331KK",
+".K13331KK13331K.",
+".K1331K..K1331K.",
+".K111K....K111K.",
+".KK1K......K1KK.",
+"................"]],
+
+["Door",[
+"KKKKKKKKKKKKKKKK",
+"K22222222222222K",
+"K21111111111112K",
+"K21333333333312K",
+"K21311111111312K",
+"K21311111111312K",
+"K21311111111312K",
+"K21311111111312K",
+"K21311111111312K",
+"K21311111111312K",
+"K21311111111312K",
+"K213111111kk312K",
+"K21333333kkk312K",
+"K21111111kk1112K",
+"K22222222222222K",
+"KKKKKKKKKKKKKKKK"]],
+
+["Trapdoor",[
+"KKKKKKKKKKKKKKKK",
+"K22222222222222K",
+"K23333333333332K",
+"K23111111111132K",
+"K23111111111132K",
+"K22222222222222K",
+"K23111111111132K",
+"K23111111111132K",
+"K22222222222222K",
+"K23111111111132K",
+"K23111111111132K",
+"K22222222222222K",
+"K23111111111132K",
+"K23333333333332K",
+"K2222kk2222kk22K",
+"KKKKKKKKKKKKKKKK"]],
+
+["Bed",[
+"KKKKKKKKKKKKKKKK",
+"K22222222222222K",
+"K2XXXXXXXXXXXX2K",
+"K2XXXXXXXXXXXX2K",
+"K2XXXXXXXXXXXX2K",
+"K22222222222222K",
+"K21111111111112K",
+"K21333333333312K",
+"K21311111111312K",
+"K21311111111312K",
+"K21311111111312K",
+"K21333333333312K",
+"K21111111111112K",
+"K21111111111112K",
+"K22222222222222K",
+"KKKKKKKKKKKKKKKK"]],
+
+["BedFoot",[
+"KKKKKKKKKKKKKKKK",
+"K22222222222222K",
+"K21111111111112K",
+"K21333333333312K",
+"K21311111111312K",
+"K21311111111312K",
+"K21311111111312K",
+"K21311111111312K",
+"K21311111111312K",
+"K21311111111312K",
+"K21311111111312K",
+"K21333333333312K",
+"K21111111111112K",
+"K22222222222222K",
+"K22222222222222K",
+"KKKKKKKKKKKKKKKK"]],
+
+["Lantern",[
+"................",
+".....KKKKKK.....",
+"....K222222K....",
+"...K22kkkk22K...",
+"..K2k111111k2K..",
+"..K2k133331k2K..",
+".K2k113333311k2K",
+".K2k133FFFF31k2K",
+".K2k133FFFF31k2K",
+".K2k113333311k2K",
+"..K2k133331k2K..",
+"..K2k111111k2K..",
+"...K22kkkk22K...",
+"....K222222K....",
+".....KKKKKK.....",
+"................"]],
+
+["Torch",[
+"................",
+"................",
+"......KKKK......",
+".....K1111K.....",
+"....K113311K....",
+"....K13FF31K....",
+"...K113FF311K...",
+"...K13FFFF31K...",
+"...K13FFFF31K...",
+"...K113FF311K...",
+"....K13FF31K....",
+"....K113311K....",
+".....K1111K.....",
+"......KKKK......",
+"................",
+"................"]],
+
+["Glow",[
+"KKKKKKKKKKKKKKKK",
+"K22222222222222K",
+"K21111111111112K",
+"K21333333333312K",
+"K21331111113312K",
+"K21331333331312K",
+"K21313333333312K",
+"K21313333333312K",
+"K21313333333312K",
+"K21313333333312K",
+"K21331333331312K",
+"K21331111113312K",
+"K21333333333312K",
+"K21111111111112K",
+"K22222222222222K",
+"KKKKKKKKKKKKKKKK"]],
+
+["Carpet",[
+"................",
+".K2K2K2K2K2K2K2.",
+".K111111111111K.",
+".21333333333312.",
+".K131111111131K.",
+".21313333331312.",
+".K131311113131K.",
+".21313111131312.",
+".K131311113131K.",
+".21313333331312.",
+".K131111111131K.",
+".21333333333312.",
+".K111111111111K.",
+".K2K2K2K2K2K2K2.",
+"................",
+"................"]],
+
+["Fence Gate",[
+"KKKKKKKKKKKKKKKK",
+"K22K111111K22 KK",
+"K22K133331K22..K",
+"K22K131131K22..K",
+"K22K131131K22..K",
+"KKKKKKKKKKKKKKKK",
+"K11111111111111K",
+"K13333333333331K",
+"K13333333333331K",
+"K11111111111111K",
+"KKKKKKKKKKKKKKKK",
+"K22K131131K22..K",
+"K22K131131K22..K",
+"K22K133331K22..K",
+"K22K111111K22.KK",
+"KKKKKKKKKKKKKKKK"]],
+
+["Sign",[
+"................",
+".KKKKKKKKKKKKKK.",
+".K222222222222K.",
+".K211111111112K.",
+".K213333333312K.",
+".K213222222312K.",
+".K213222222312K.",
+".K213333333312K.",
+".K211111111112K.",
+".K222222222222K.",
+".KKKKKKKKKKKKK..",
+".....K222K......",
+".....K212K......",
+".....K222K......",
+".....KKKKK......",
+"................"]],
+
+["Bars",[
+"................",
+".K11K..K11K.....",
+".K11K..K11K.....",
+".K11K..K11K.....",
+".K11K..K11K.....",
+".K11K..K11K.....",
+".KKKKKKKKKK.....",
+".K11111111K.....",
+".K11111111K.....",
+".KKKKKKKKKK.....",
+".K11K..K11K.....",
+".K11K..K11K.....",
+".K11K..K11K.....",
+".K11K..K11K.....",
+".K11K..K11K.....",
+"................"]],
+
+["Cobweb",[
+"X..............X",
+".X....XXX....X..",
+"..X..X...X..X...",
+"...XX.....XX....",
+"XXXXXXXXXXXXXXXX",
+"...XX.....XX....",
+"..X..X...X..X...",
+".X....XXX....X..",
+"XXXXXXXXXXXXXXXX",
+".X....XXX....X..",
+"..X..X...X..X...",
+"...XX.....XX....",
+"XXXXXXXXXXXXXXXX",
+"...XX.....XX....",
+"..X..X...X..X...",
+"X..............X"]],
+
+["Scaffolding",[
+"KKKKKKKKKKKKKKKK",
+"K11KKKKKKKKKK11K",
+"K1KKKKKKKKKKKK1K",
+"KKKK11KK11KKKKKK",
+"KKK11111111KKKKK",
+"KKKK11KK11KKKKK.",
+"KKKKKKKKKKKKKKKK",
+"K11KKKKKKKKKK11K",
+"K11KKKKKKKKKK11K",
+"KKKKKKKKKKKKKKKK",
+"KKKK11KK11KKKKK.",
+"KKK11111111KKKK.",
+"KKKK11KK11KKKKK.",
+"K1KKKKKKKKKKKK1K",
+"K11KKKKKKKKKK11K",
+"KKKKKKKKKKKKKKKK"]],
+
+["Stairs",[
+"KKKKKKKKKKKKKKKK",
+"K33333333333333K",
+"K33333333333333K",
+"K22222222222222K",
+"K11111111111111K",
+"K11111111111111K",
+"K22222222222222K",
+"K33333333333333K",
+"K33333333333333K",
+"K22222222222222K",
+"K11111111111111K",
+"K11111111111111K",
+"K22222222222222K",
+"K33333333333333K",
+"K33333333333333K",
+"KKKKKKKKKKKKKKKK"]],
+
+["Slab",[
+"................",
+"KKKKKKKKKKKKKKKK",
+"K22222222222222K",
+"K33333333333333K",
+"K11111111111111K",
+"K11111111111111K",
+"K11111111111111K",
+"K11111111111111K",
+"K11111111111111K",
+"K11111111111111K",
+"K11111111111111K",
+"K22222222222222K",
+"KKKKKKKKKKKKKKKK",
+"................",
+"................",
+"................"]],
+
+["Campfire",[
+"KKKKKKKKKKKKKKKK",
+"K..DDD....DDD..K",
+"K.DDDDD..DDDDD.K",
+"K.DmmmD..DmmmD.K",
+"KDDDDDDDDDDDDDDK",
+"KDmmmmmmmmmmmmDK",
+"KDDDfffFFfffDDDK",
+"K..DfFFFFFFfD..K",
+"K..DfFFFFFFfD..K",
+"KDDDfffFFfffDDDK",
+"KDmmmmmmmmmmmmDK",
+"KDDDDDDDDDDDDDDK",
+"K.DmmmD..DmmmD.K",
+"K.DDDDD..DDDDD.K",
+"K..DDD....DDD..K",
+"KKKKKKKKKKKKKKKK"]],
+
+["Painting",[
+"KKKKKKKKKKKKKKKK",
+"K22222222222222K",
+"K21111111111112K",
+"K21KKKKKKKKKK12K",
+"K21KBBBBBBBBK12K",
+"K21KBBBXXBBBK12K",
+"K21KBBXXXXBBK12K",
+"K21KBGGXXGGBK12K",
+"K21KGGGGGGGGK12K",
+"K21KGGeeeeGGK12K",
+"K21KGeeeeeeGK12K",
+"K21KKKKKKKKKK12K",
+"K21111111111112K",
+"K22222222222222K",
+"K22222222222222K",
+"KKKKKKKKKKKKKKKK"]],
+
+["Item Frame",[
+"KKKKKKKKKKKKKKKK",
+"K22222222222222K",
+"K21111111111112K",
+"K21333333333312K",
+"K2131KKKKKK1312K",
+"K2131K....K1312K",
+"K2131K....K1312K",
+"K2131K....K1312K",
+"K2131K....K1312K",
+"K2131K....K1312K",
+"K2131KKKKKK1312K",
+"K21333333333312K",
+"K21111111111112K",
+"K22222222222222K",
+"K22222222222222K",
+"KKKKKKKKKKKKKKKK"]]
+];
+
+
+/* names that should borrow another sprite ("@X" = a template) */
+const SPRITE_ALIAS={
+ "Trapped Chest":"Chest","Ender Chest":"Chest",
+ "Chiseled Bookshelf":"Bookshelf","Blast Furnace":"Furnace",
+ "Sea Lantern":"@Glow","Jack o Lantern":"@Glow","Glowstone":"@Glow","Shroomlight":"@Glow",
+ "Froglight":"@Glow","Redstone Lamp":"@Glow","Sea Pickle":"@Glow","Magma Block":"@Glow",
+ "Chain":"@Bars","Iron Bars":"@Bars","Honeycomb Block":"@Glow"
+};
+function tplRows(n){const r=SPRITE_RULES.find(t=>t[0]===n);return r?r[1]:null}
+function spriteRows(name,foot){
+ if(foot&&/\bBed$/.test(name))return tplRows("BedFoot");
+ const al=SPRITE_ALIAS[name];
+ if(al)return al[0]==="@"?tplRows(al.slice(1)):SPRITES[al];
+ if(SPRITES[name])return SPRITES[name];
+ for(const [key,rows] of SPRITE_RULES)if(name.includes(key))return rows;
+ return null;
+}
+const spriteCache=new Map();
+function objSprite(i,foot){
+ const key=i+(foot?":f":"");
+ if(spriteCache.has(key))return spriteCache.get(key);
+ const c=C[i];let cv=null;
+ const rows=c?spriteRows(c[0],foot):null;
+ if(rows){
+  cv=document.createElement("canvas");cv.width=cv.height=16;
+  const g=cv.getContext("2d");
+  const pal=Object.assign({},SP_PAL,{"1":c[1],"2":shade(c[1],.7),"3":shade(c[1],1.22)});
+  rows.forEach((r,y)=>[...r].forEach((ch,x)=>{const col=pal[ch];if(!col)return;g.fillStyle=col;g.fillRect(x,y,1,1)}));
+ }
+ spriteCache.set(key,cv);return cv;
+}
+
 /* ================= procedural 16x16 textures ================= */
 const texCache=new Map();
 function tileStyle(n,cat){
@@ -495,7 +1379,26 @@ function buildTile(name,col,cat){
  return cv;
 }
 function tile(i){let t=texCache.get(i);if(!t){const c=C[i];t=buildTile(c[0],c[1],c[2]);texCache.set(i,t)}return t}
-const swCache=new Map();
+const swCache=new Map(),cubeCache=new Map();
+/* A 3D block icon built from the same procedural texture as the grid — used in
+ the palette so a material reads as a block, not a colour chip. */
+function cubeIcon(i){
+ let u=cubeCache.get(i);if(u)return u;
+ const S=26,R=2,s=S*R/2;                    // rendered at 2x, displayed at 26px
+ const cv=document.createElement("canvas");cv.width=cv.height=S*R;
+ const g=cv.getContext("2d");g.imageSmoothingEnabled=true;
+ const img=tile(i),X=S*R/2,Y=s*.5;
+ const f=(p0x,p0y,p1x,p1y,p3x,p3y,dark)=>{
+  g.save();g.setTransform(p1x-p0x,p1y-p0y,p3x-p0x,p3y-p0y,p0x,p0y);
+  g.drawImage(img,-.01,-.01,1.02,1.02);
+  if(dark){g.fillStyle="rgba(0,0,0,"+dark+")";g.fillRect(-.01,-.01,1.02,1.02)}
+  g.restore();g.setTransform(1,0,0,1,0,0);
+ };
+ f(X-s,Y+s*.5, X,Y+s, X-s,Y+s*1.5, .30);            // left
+ f(X,Y+s, X+s,Y+s*.5, X,Y+s*2, .48);                // right
+ f(X-s,Y+s*.5, X,Y, X,Y+s, 0);                      // top
+ u=cv.toDataURL();cubeCache.set(i,u);return u;
+}
 function swatchCSS(i){let u=swCache.get(i);if(!u){u=tile(i).toDataURL();swCache.set(i,u)}return u}
 
 /* ================= symmetry ================= */
@@ -610,18 +1513,21 @@ function paintFloor(f,alpha,layerMin){
 function icon(o,x,y,s,alpha){
  const c=C[o.i];if(!c)return;const n=c[0];
  ctx.save();ctx.globalAlpha=alpha==null?1:alpha;
- ctx.translate(x+s/2,y+s/2);ctx.rotate((o.r||0)*Math.PI/2);ctx.translate(-s/2,-s/2);
- ctx.fillStyle=c[1];ctx.strokeStyle="#0d0d0d";ctx.lineWidth=Math.max(1,s/14);
- if(n.includes("Door")||n==="Fence Gate"){ctx.fillRect(4,s*.34,s-8,s*.32);ctx.strokeRect(4,s*.34,s-8,s*.32);
-  ctx.fillStyle="#1b1b1b";ctx.beginPath();ctx.arc(s-7,s/2,Math.max(1.2,s/13),0,7);ctx.fill()}
- else if(n.includes("Bed")){ctx.fillRect(3,3,s-6,s-6);ctx.strokeRect(3,3,s-6,s-6);
-  if(o.part!==2){ctx.fillStyle="#f2f2ee";ctx.fillRect(5,5,s-10,s*.26);ctx.strokeRect(5,5,s-10,s*.26)}}
- else if(n.includes("Chest")||n==="Barrel"){ctx.fillRect(3,4,s-6,s-8);ctx.strokeRect(3,4,s-6,s-8);
-  ctx.fillStyle="#f0c23d";ctx.fillRect(s/2-2,s/2-2,4,4)}
- else if(n.includes("Stairs")){ctx.fillRect(3,3,s-6,s-6);for(let k=0;k<3;k++){ctx.strokeRect(3+k*2.5,3+k*2.5,s-6-k*5,s-6-k*5)}}
- else if(c[2]==="light"){ctx.beginPath();ctx.arc(s/2,s/2,s*.3,0,7);ctx.fill();ctx.stroke();
-  ctx.fillStyle="rgba(255,225,140,.55)";ctx.beginPath();ctx.arc(s/2,s/2,s*.46,0,7);ctx.fill()}
- else{ctx.fillRect(3,3,s-6,s-6);ctx.strokeRect(3,3,s-6,s-6);ctx.fillStyle="#ffffff44";ctx.fillRect(5,5,s-10,2.5)}
+ ctx.translate(x+s/2,y+s/2);ctx.rotate((o.r||0)*Math.PI/2);
+ const sp=objSprite(o.i,o.part===2);
+ if(sp){
+  if(c[2]==="light"){ctx.fillStyle=rgba(c[1],.20);ctx.beginPath();ctx.arc(0,0,s*.54,0,7);ctx.fill()}
+  ctx.imageSmoothingEnabled=false;ctx.drawImage(sp,-s/2,-s/2,s,s);
+  ctx.restore();ctx.globalAlpha=1;return;
+ }
+ // no bespoke art: draw the block's own texture, inset and outlined so it
+ // still reads as "an object sitting here" rather than part of the floor
+ ctx.translate(-s/2,-s/2);
+ const in1=Math.max(1,Math.round(s*0.09));
+ ctx.imageSmoothingEnabled=false;
+ ctx.fillStyle="#0b0b0bcc";ctx.fillRect(in1-1,in1-1,s-in1*2+2,s-in1*2+2);
+ ctx.drawImage(tile(o.i),in1,in1,s-in1*2,s-in1*2);
+ ctx.strokeStyle="#ffffff33";ctx.lineWidth=1;ctx.strokeRect(in1+.5,in1+.5,s-in1*2-1,s-in1*2-1);
  ctx.restore();ctx.globalAlpha=1;
 }
 function rsIcon(r,x,y,s){
@@ -934,7 +1840,7 @@ function labelList(){
 }
 function selection(){
  const b=C[sel];
- $("#selection").innerHTML=`<div class=row><span class=sw style="background-image:url(${swatchCSS(sel)});background-size:cover;flex:none"></span><b style="flex:1">${b[0]}</b></div>
+ $("#selection").innerHTML=`<div class=row><span class=sw style="background-image:url(${cubeIcon(sel)});background-size:contain;background-repeat:no-repeat;background-position:center;border:0;flex:none"></span><b style="flex:1">${b[0]}</b></div>
  <div class=small>${b[2]} · next piece faces ${["North","East","South","West"][rot]} · ${curH} block${curH>1?"s":""} tall</div>`;
 }
 function refresh(){counts();labelList();selection()}
@@ -945,7 +1851,7 @@ function palette(q=""){
   if(ql&&!(b[0].toLowerCase().includes(ql)||b[2].toLowerCase().includes(ql)))return;
   shown++;if(shown>260)return;
   const z=document.createElement("button");z.className="mat"+(i===sel?" active":"");z.type="button";
-  z.innerHTML=`<span class=sw style="background-image:url(${swatchCSS(i)});background-size:cover"></span><span>${b[0]}</span>`;
+  z.innerHTML=`<span class=sw style="background-image:url(${cubeIcon(i)});background-size:contain;background-repeat:no-repeat;background-position:center;border:0"></span><span>${b[0]}</span>`;
   z.onclick=()=>{sel=i;palette($("#search").value);selection();if(tool==="erase"||tool==="move")setTool("pencil")};
   e.append(z)});
  if(!shown)e.innerHTML="<p class=small>No blocks match that search.</p>";
@@ -969,8 +1875,38 @@ function duplicateFloor(i){
 }
 
 /* ================= isometric 3D preview ================= */
+let isoTextured=true;
+/* Map a 16x16 tile onto a parallelogram. The affine matrix sends the unit
+ square to (p0 -> p1 along u, p0 -> p3 along v), so one drawImage textures a
+ whole cube face. Faces overdraw by 1% to stop hairline seams between cubes. */
+function isoFace(g,img,p0x,p0y,p1x,p1y,p3x,p3y,dark,flat){
+ g.save();
+ g.setTransform(p1x-p0x,p1y-p0y,p3x-p0x,p3y-p0y,p0x,p0y);
+ if(flat){g.fillStyle=flat;g.fillRect(-.01,-.01,1.02,1.02)}
+ else g.drawImage(img,-.01,-.01,1.02,1.02);
+ if(dark>0){g.fillStyle="rgba(0,0,0,"+dark+")";g.fillRect(-.01,-.01,1.02,1.02)}
+ g.restore();
+ g.setTransform(1,0,0,1,0,0);
+}
+/* Rotate the floor into view space once, so every neighbour test below is
+ done in the same orientation we actually draw. The old code tested
+ neighbours in world space and drew rotated, which mis-culled once the view
+ was turned. */
+function rotateFloor(f){
+ const d=isoDir,w=(d%2)?H:W,h=(d%2)?W:H;
+ const cells=Array.from({length:h},()=>Array(w).fill(null));
+ const hts=Array.from({length:h},()=>Array(w).fill(1));
+ for(let z=0;z<H;z++)for(let x=0;x<W;x++){
+  let nx,nz;
+  switch(d){case 1:nx=z;nz=W-1-x;break;case 2:nx=W-1-x;nz=H-1-z;break;case 3:nx=H-1-z;nz=x;break;default:nx=x;nz=z}
+  cells[nz][nx]=f.cells[z]?.[x]??null;
+  hts[nz][nx]=f.hts?.[z]?.[x]||1;
+ }
+ return{w,h,cells,hts};
+}
 function isoRender(){
  const ic=$("#iso"),g=ic.getContext("2d");
+ g.setTransform(1,0,0,1,0,0);
  g.fillStyle="#10161d";g.fillRect(0,0,ic.width,ic.height);
  const fh=+$("#floorHeight").value||4;
  let maxTop=0;F.forEach((f,lev)=>f.hts.forEach(r=>r.forEach(h=>{maxTop=Math.max(maxTop,lev*fh+h)})));
@@ -978,35 +1914,44 @@ function isoRender(){
  const s=clamp(Math.min((ic.width-40)/span,(ic.height-60)/(span*.5+maxTop*1.05)),2,14);
  const ox=ic.width/2,oy=48+maxTop*s*.55;
  const rotXZ=(x,z)=>{switch(isoDir){case 1:return[z,W-1-x];case 2:return[W-1-x,H-1-z];case 3:return[H-1-z,x];default:return[x,z]}};
- const cubes=[];
+ const cubes=[];let faces=0;
  F.forEach((f,lev)=>{
-  const base=lev*fh;
-  for(let z=0;z<H;z++)for(let x=0;x<W;x++){
-   const v=f.cells[z]?.[x];if(v==null||!C[v])continue;
-   const h=f.hts[z][x]||1;
+  const base=lev*fh,R=rotateFloor(f);
+  for(let z=0;z<R.h;z++)for(let x=0;x<R.w;x++){
+   const v=R.cells[z][x];if(v==null||!C[v])continue;
+   const h=R.hts[z][x];
    for(let y=0;y<h;y++){
-    const nx=(f.cells[z]?.[x+1]!=null)&&(f.hts[z][x+1]||1)>y;
-    const nz=(f.cells[z+1]?.[x]!=null)&&(f.hts[z+1]?.[x]||1)>y;
-    const up=y+1<h;
-    if(nx&&nz&&up)continue;              // fully hidden — skip
-    const[px,pz]=rotXZ(x,z);
-    cubes.push([px,pz,base+y,C[v][1],up])}
+    // +x neighbour hides the lower-right face, +z hides the lower-left,
+    // the block above hides the top. All three hidden ⇒ skip the cube.
+    const hideR=(R.cells[z]?.[x+1]!=null)&&(R.hts[z][x+1]||1)>y;
+    const hideL=(R.cells[z+1]?.[x]!=null)&&(R.hts[z+1]?.[x]||1)>y;
+    const hideT=y+1<h;
+    if(hideR&&hideL&&hideT)continue;
+    faces+=(hideR?0:1)+(hideL?0:1)+(hideT?0:1);
+    cubes.push([x,z,base+y,v,hideT,0,0,hideL,hideR])}
   }
-  f.objs.forEach(o=>{const v=f.cells[o.y]?.[o.x];const h=v!=null?(f.hts[o.y][o.x]||1):1;
-   const[px,pz]=rotXZ(o.x,o.y);cubes.push([px,pz,base+h,C[o.i]?.[1]||"#fff",false,true])});
+  f.objs.forEach(o=>{if(o.part===2&&!/Bed/.test(C[o.i]?.[0]||""))return;
+   const v=f.cells[o.y]?.[o.x];const h=v!=null?(f.hts[o.y][o.x]||1):1;
+   const[px,pz]=rotXZ(o.x,o.y);faces+=3;cubes.push([px,pz,base+h,o.i,false,1,o.part===2,false,false])});
  });
  cubes.sort((a,b)=>(a[0]+a[1]+a[2])-(b[0]+b[1]+b[2]));
- cubes.forEach(([x,z,y,col,covered,isObj])=>{
+ // budget is faces actually drawn, not cubes — a packed build hides most of them
+ const textured=isoTextured&&faces<=30000;
+ g.imageSmoothingEnabled=true;
+ cubes.forEach(([x,z,y,mi,hideT,isObj,foot,hideL,hideR])=>{
+  const col=C[mi]?.[1]||"#888";
   const X=ox+(x-z)*s,Y=oy+(x+z)*s*.5-y*s;
-  const sc=isObj?s*.62:s,off=isObj?(s-sc):0;
-  const Xo=X,Yo=Y+off*.5;
-  g.fillStyle=shade(col,.72);g.beginPath();g.moveTo(Xo-sc,Yo);g.lineTo(Xo,Yo+sc*.5);g.lineTo(Xo,Yo+sc*.5+sc);g.lineTo(Xo-sc,Yo+sc);g.closePath();g.fill();
-  g.fillStyle=shade(col,.52);g.beginPath();g.moveTo(Xo+sc,Yo);g.lineTo(Xo,Yo+sc*.5);g.lineTo(Xo,Yo+sc*.5+sc);g.lineTo(Xo+sc,Yo+sc);g.closePath();g.fill();
-  if(!covered){g.fillStyle=shade(col,1.05);g.beginPath();g.moveTo(Xo,Yo-sc*.5);g.lineTo(Xo+sc,Yo);g.lineTo(Xo,Yo+sc*.5);g.lineTo(Xo-sc,Yo);g.closePath();g.fill()}
+  const sc=isObj?s*.6:s,Yo=Y+(isObj?(s-sc)*.5:0);
+  const img=textured?(isObj?(objSprite(mi,!!foot)||tile(mi)):tile(mi)):null;
+  if(!hideL)isoFace(g,img, X-sc,Yo, X,Yo+sc*.5, X-sc,Yo+sc, .30, textured?null:shade(col,.72));
+  if(!hideR)isoFace(g,img, X,Yo+sc*.5, X+sc,Yo, X,Yo+sc*.5+sc, .48, textured?null:shade(col,.52));
+  if(!hideT)isoFace(g,img, X-sc,Yo, X,Yo-sc*.5, X,Yo+sc*.5, 0, textured?null:col);
  });
+ g.setTransform(1,0,0,1,0,0);
  g.fillStyle="#dbe5ee";g.font="bold 15px system-ui";g.fillText($("#name").value||"Untitled build",16,26);
  g.fillStyle="#91a2b4";g.font="12px system-ui";
- g.fillText(`${W} × ${H} blocks · ${F.length} floor${F.length>1?"s":""} · ${maxTop} blocks tall · ${cubes.length.toLocaleString()} blocks drawn`,16,45);
+ g.fillText(`${W} × ${H} blocks · ${F.length} floor${F.length>1?"s":""} · ${maxTop} blocks tall · ${cubes.length.toLocaleString()} blocks`
+  +(textured?"":" · flat shading (too big to texture)"),16,45);
  g.fillText("View "+["South-east","South-west","North-west","North-east"][isoDir],ic.width-130,26);
 }
 
@@ -1250,7 +2195,7 @@ function exportPNG(){
   g.fillStyle="#c8d2dc";g.fillText(n.length>20?n.slice(0,19)+"…":n,lx+17,ly);
   g.fillStyle="#8b98a7";g.textAlign="right";g.fillText(String(q),lx+legW-24,ly);g.textAlign="left";ly+=17});
  g.fillStyle="#6f7d8c";g.font="11px system-ui";
- g.fillText("Made with MinePlan V3.7",pad,out.height-10);
+ g.fillText("Made with MinePlan V3.9",pad,out.height-10);
  // north arrow
  g.save();g.translate(out.width-46,head+6);g.fillStyle="#9aa8b7";
  g.beginPath();g.moveTo(0,-2);g.lineTo(6,12);g.lineTo(0,8);g.lineTo(-6,12);g.closePath();g.fill();
@@ -1369,6 +2314,7 @@ $("#mode").onclick=()=>{blueprint=!blueprint;$("#mode").textContent=blueprint?"B
 $("#preview3d").onclick=()=>{previewDialog.showModal();isoRender()};
 $("#closePreview").onclick=()=>previewDialog.close();
 $("#isoRot").onclick=()=>{isoDir=(isoDir+1)%4;isoRender()};
+$("#isoTex").onchange=e=>{isoTextured=e.target.checked;isoRender()};
 $("#isoPng").onclick=()=>{const a=document.createElement("a");
  a.download=($("#name").value||"build").replace(/[^\w-]+/g,"_")+"_3d.png";a.href=$("#iso").toDataURL("image/png");a.click()};
 $("#shopBtn").onclick=()=>{shopRender();shopDialog.showModal()};
@@ -1429,6 +2375,12 @@ document.addEventListener("visibilitychange",()=>{if(document.hidden&&dirty)back
 
 /* ================= what's new, shown once per version ================= */
 const NOTES={
+ "3.9":["The 3D preview now shows real block surfaces \u2014 wood grain, brick courses, stone speckle \u2014 instead of flat colours.",
+        "Furniture keeps its top-down art on the top face, so you can spot the crafting table from above in 3D.",
+        "The block palette shows little 3D blocks instead of colour chips."],
+ "3.8":["Every object now has real top-down pixel art — 45 hand-drawn sprites instead of one generic box.",
+        "The crafting table is the actual 3\u00d73 grid. Barrels, stonecutters, cartography tables and the rest match their real tops.",
+        "Doors, trapdoors, beds, lanterns and carpets tint themselves from their own wood or wool colour."],
  "3.7":["Coordinate rulers along the top and left edges — chunk boundaries are marked in gold.",
         "This note itself: after an update lands, you get a one-time summary of what changed."],
  "3.6":["Block heights, so the 3D preview builds real walls and towers.",
