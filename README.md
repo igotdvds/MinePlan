@@ -8,7 +8,7 @@ dependencies, no server code. It also works offline if you just open the file.
 
 ## Live site
 
-https://YOUR-USERNAME.github.io/mineplan/
+https://igotdvds.github.io/mineplan/
 
 Unlisted — reachable by link, told not to appear in search results
 (`noindex` + `robots.txt`). Not password-protected.
