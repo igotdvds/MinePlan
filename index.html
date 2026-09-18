@@ -4,9 +4,9 @@
 <meta name="theme-color" content="#121820">
 <meta name="description" content="MinePlan — a block-by-block planner for Minecraft builds.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='10' fill='%23171d25'/%3E%3Crect x='10' y='34' width='44' height='8' fill='%23b88752'/%3E%3Crect x='10' y='42' width='44' height='8' fill='%238a6340'/%3E%3Crect x='22' y='14' width='20' height='20' fill='%2377c45a'/%3E%3Crect x='26' y='18' width='12' height='12' fill='%2365a84a'/%3E%3C/svg%3E">
-<title>MinePlan V3.16</title>
+<title>MinePlan V3.17</title>
 <!-- ===== bump this ONE line when you upload a new version ===== -->
-<meta name="mineplan-build" content="2026-09-17.11">
+<meta name="mineplan-build" content="2026-09-18.1">
 <style>
 :root{--bg:#0d1117;--p:#171d25;--p2:#202833;--line:#344050;--txt:#edf3f8;--mut:#9aa8b7;--green:#65a84a;--acc:#77c45a}
 *{box-sizing:border-box}
@@ -104,7 +104,7 @@ textarea#cmds{width:100%;height:46vh;font:11.5px ui-monospace,Consolas,monospace
 @media (max-width:640px){.app{grid-template-columns:var(--lw,190px) 6px minmax(0,1fr);--lw:190px}.right,.resizer[data-side=r]{display:none}}
 </style></head><body>
 <header>
-<div class="logo" id="logo" title="">⛏ Mine<b>Plan V3.16</b></div>
+<div class="logo" id="logo" title="">⛏ Mine<b>Plan V3.17</b></div>
 <input id="name" value="My Minecraft Build" aria-label="Project name">
 <button id="projects" title="Open the project library">Projects</button>
 <button id="save" class="primary" title="Save to a file (Ctrl+S)">Save</button>
@@ -224,7 +224,7 @@ textarea#cmds{width:100%;height:46vh;font:11.5px ui-monospace,Consolas,monospace
 
 <dialog id="previewDialog" style="width:min(940px,94vw)"><h2>Isometric Build Preview</h2>
  <canvas id="iso" width="880" height="560" style="width:100%;background:#10161d;border:1px solid #435166;border-radius:6px"></canvas>
- <div class="row" style="margin-top:10px"><button id="isoRot">↻ Rotate view</button><button id="isoPng">Save as PNG</button><label class="inline fixed" style="flex:none"><input type="checkbox" id="isoTex" checked> Textured blocks</label><label class="inline fixed" style="flex:none">Floor <select id="isoFloorSel" style="width:auto"></select></label><label class="inline fixed" style="flex:none"><input type="checkbox" id="isoSpread"> Spread floors apart</label><span class="spacer"></span><button id="closePreview">Close</button></div>
+ <div class="row" style="margin-top:10px"><button id="isoRot">↻ Quarter turn</button><button id="isoReset">Reset view</button><button id="isoPng">Save as PNG</button><label class="inline fixed" style="flex:none"><input type="checkbox" id="isoTex" checked> Textured blocks</label><label class="inline fixed" style="flex:none">Floor <select id="isoFloorSel" style="width:auto"></select></label><label class="inline fixed" style="flex:none"><input type="checkbox" id="isoSpread"> Spread floors apart</label><span class="spacer"></span><button id="closePreview">Close</button></div>
  <p class="small">Built from the block heights you set. Blocks with a height of 1 are floors; taller ones become walls and towers.</p></dialog>
 
 <dialog id="shopDialog" style="width:min(560px,94vw)"><h2>Shopping List</h2>
@@ -267,7 +267,7 @@ textarea#cmds{width:100%;height:46vh;font:11.5px ui-monospace,Consolas,monospace
 <div id="hoverTip"></div>
 <script>
 "use strict";
-const VERSION="3.16";
+const VERSION="3.17";
 const BUILD=document.querySelector('meta[name="mineplan-build"]')?.content||"dev";
 /* ---------- material table ---------- */
 const C=[
@@ -419,7 +419,7 @@ let undoStack=[],future=[],pending=null;
 let blueprint=false,sym="none",curH=1,gidSeq=1;
 let hoverTimer=null,hoverKey="",hoverCell=null,lastPaint=null,strokeCells=null,strokeMode="paint";
 let downAt=null,dragMoved=false;   // a click only becomes a drag past a few pixels
-let buildMode=false,buildSteps=[],buildAt=0,isoDir=0;
+let buildMode=false,buildSteps=[],buildAt=0;
 let projectId=null,fileHandle=null,dirty=false,labelsDirty=true,catFilter="";
 
 const $=s=>document.querySelector(s);
@@ -2372,25 +2372,12 @@ function isoFace(g,img,p0x,p0y,p1x,p1y,p3x,p3y,dark,flat){
  g.restore();
  g.setTransform(1,0,0,1,0,0);
 }
-/* Rotate the floor into view space once, so every neighbour test below is
- done in the same orientation we actually draw. The old code tested
- neighbours in world space and drew rotated, which mis-culled once the view
- was turned. */
-function rotateFloor(f){
- const d=isoDir,w=(d%2)?H:W,h=(d%2)?W:H;
- const cells=Array.from({length:h},()=>Array(w).fill(null));
- const hts=Array.from({length:h},()=>Array(w).fill(1));
- const base=Array.from({length:h},()=>Array(w).fill(0));
- for(let z=0;z<H;z++)for(let x=0;x<W;x++){
-  let nx,nz;
-  switch(d){case 1:nx=z;nz=W-1-x;break;case 2:nx=W-1-x;nz=H-1-z;break;case 3:nx=H-1-z;nz=x;break;default:nx=x;nz=z}
-  cells[nz][nx]=f.cells[z]?.[x]??null;
-  hts[nz][nx]=f.hts?.[z]?.[x]||1;
-  base[nz][nx]=f.base?.[z]?.[x]||0;
- }
- return{w,h,cells,hts,base};
-}
 let isoFloor=-1,isoSpread=false;
+/* A real orthographic camera replaces the old fixed projection. yaw spins
+ around the vertical axis, pitch tilts. The defaults reproduce the classic
+ isometric look exactly: yaw 45°, pitch atan(1/√2) ≈ 35.26°. */
+let isoYaw=Math.PI/4, isoPitch=Math.atan(Math.SQRT1_2), isoDragging=false;
+const DEG=180/Math.PI;
 function isoFloorOptions(){
  const sel=$("#isoFloorSel");if(!sel)return;
  sel.innerHTML=`<option value="-1">All floors</option>`+
@@ -2398,12 +2385,10 @@ function isoFloorOptions(){
  if(isoFloor>=F.length)isoFloor=-1;
  sel.value=String(isoFloor);
 }
-/* The top face is a diamond, so rotating its texture is just picking a
- different corner as the origin: p2 = p1 + p3 - p0 stays the 4th corner. */
-function isoTop(g,img,X,Yt,s,r,flat){
- const V=[[X-s,Yt],[X,Yt-s*.5],[X+s,Yt],[X,Yt+s*.5]];   // W, N, E, S
- const k=((r|0)%4+4)%4, p0=V[k], p1=V[(k+1)%4], p3=V[(k+3)%4];
- isoFace(g,img, p0[0],p0[1], p1[0],p1[1], p3[0],p3[1], 0, flat);
+function compassName(){
+ const d=((isoYaw*DEG)%360+360)%360;
+ const names=["South","South-east","East","North-east","North","North-west","West","South-west"];
+ return names[Math.round(d/45)%8];
 }
 function isoRender(){
  const ic=$("#iso"),g=ic.getContext("2d");
@@ -2411,7 +2396,6 @@ function isoRender(){
  g.fillStyle="#10161d";g.fillRect(0,0,ic.width,ic.height);
  const fh=+$("#floorHeight").value||4;
  const levels=isoFloor<0?F.map((f,i)=>i):[isoFloor];
- // a single floor sits at ground level; stacked floors can be spread for a look inside
  const gap=isoSpread?Math.max(3,Math.round(fh*.75)):0;
  const baseOf=i=>isoFloor<0?(levels.indexOf(i)*(fh+gap)):0;
 
@@ -2425,72 +2409,106 @@ function isoRender(){
  });
  if(!any)maxTop=1;
 
- /* Fit the whole projection instead of guessing. Screen extents of the
-    isometric box: width ≈ (W+H)·s, height ≈ (W+H-2)·s/2 + maxTop·s, plus a
-    cube's own half-diamond top and bottom. Earlier versions used an ad-hoc
-    origin and clipped tall builds off the top of the canvas. */
+ isoPitch=clamp(isoPitch,0.12,1.5);
+ const cyaw=Math.cos(isoYaw),syaw=Math.sin(isoYaw);
+ const kD=Math.sin(isoPitch),kU=Math.cos(isoPitch);
+ // project a world point at unit scale
+ const raw=(wx,wy,wz)=>{const rx=wx*cyaw-wz*syaw,rd=wx*syaw+wz*cyaw;return[rx,rd*kD-wy*kU]};
+ // distance toward the camera; larger is nearer, so painting in ascending
+ // order puts near things on top
+ const near=(wx,wy,wz)=>(wx*syaw+wz*cyaw)*kU+wy*kD;
+
+ /* Fit by projecting the eight corners of the world bounding box — exact at
+    any camera angle, unlike the closed-form guess this replaced. */
  const padX=18,padTop=58,padBot=16;
  const availW=ic.width-padX*2,availH=ic.height-padTop-padBot;
- const wUnits=W+H+1, hUnits=(W+H-2)*.5+maxTop+2.5;
- const s=clamp(Math.min(availW/wUnits,availH/hUnits),1.5,16);
- const ox=ic.width/2-(W-H)*s/2;
- const oy=padTop+maxTop*s+s*.5;
+ let mnX=1e9,mxX=-1e9,mnY=1e9,mxY=-1e9;
+ for(const cx of[0,W])for(const cy of[0,maxTop])for(const cz of[0,H]){
+  const[px,py]=raw(cx,cy,cz);
+  if(px<mnX)mnX=px;if(px>mxX)mxX=px;if(py<mnY)mnY=py;if(py>mxY)mxY=py;}
+ const spanX=Math.max(mxX-mnX,.001),spanY=Math.max(mxY-mnY,.001);
+ const s=clamp(Math.min(availW/spanX,availH/spanY),1.2,26);
+ const ox=padX-mnX*s+(availW-spanX*s)/2;
+ const oy=padTop-mnY*s+(availH-spanY*s)/2;
+ const P=(wx,wy,wz)=>{const[px,py]=raw(wx,wy,wz);return[ox+px*s,oy+py*s]};
 
- const rotXZ=(x,z)=>{switch(isoDir){case 1:return[z,W-1-x];case 2:return[W-1-x,H-1-z];case 3:return[H-1-z,x];default:return[x,z]}};
- const cubes=[];let faces=0;
+ // which side faces the camera can see, from the yaw alone
+ const seePlusX=syaw>0,seePlusZ=cyaw>0;
+
+ const boxes=[];let faces=0;
  levels.forEach(i=>{
-  const f=F[i],base=baseOf(i),R=rotateFloor(f);
-  for(let z=0;z<R.h;z++)for(let x=0;x<R.w;x++){
-   const v=R.cells[z][x];if(v==null||!C[v])continue;
-   const h=R.hts[z][x],bs=R.base[z][x];
-   // a neighbour only hides a face if it is solid at that same absolute level
-   const occ=(ax,az,ay)=>{const nv=R.cells[az]?.[ax];if(nv==null||thinOf(nv)<1)return false;
-    const nb=R.base[az][ax],nh=R.hts[az][ax]||1;return ay>=nb&&ay<nb+nh};
+  const f=F[i],fb=baseOf(i);
+  const solidAt=(x,z,y)=>{const v=f.cells[z]?.[x];if(v==null||thinOf(v)<1)return false;
+   const b2=f.base?.[z]?.[x]||0,h2=f.hts[z][x]||1;return y>=b2&&y<b2+h2};
+  for(let z=0;z<H;z++)for(let x=0;x<W;x++){
+   const v=f.cells[z][x];if(v==null||!C[v])continue;
+   const bs=f.base?.[z]?.[x]||0,h=f.hts[z][x]||1,thin=thinOf(v);
    for(let y=bs;y<bs+h;y++){
-    const hideR=occ(x+1,z,y),hideL=occ(x,z+1,y),hideT=(y+1<bs+h);
-    if(hideR&&hideL&&hideT)continue;
-    faces+=(hideR?0:1)+(hideL?0:1)+(hideT?0:1);
-    cubes.push([x,z,base+y,v,hideT,0,0,hideL,hideR,0])}
+    const sx=seePlusX?solidAt(x+1,z,y):solidAt(x-1,z,y);
+    const sz=seePlusZ?solidAt(x,z+1,y):solidAt(x,z-1,y);
+    const st=(y+1<bs+h);
+    if(sx&&sz&&st)continue;
+    faces+=(sx?0:1)+(sz?0:1)+(st?0:1);
+    boxes.push({x,z,y:fb+y,mi:v,kind:0,thin,hx:sx,hz:sz,ht:st,rot:0});
+   }
   }
   f.objs.forEach(o=>{if(o.part===2&&!PAIRED.test(C[o.i]?.[0]||""))return;
-   const v=f.cells[o.y]?.[o.x];const bs=f.base?.[o.y]?.[o.x]||0;const h=v!=null?bs+(f.hts[o.y][o.x]||1):0;
-   const[px,pz]=rotXZ(o.x,o.y);faces+=3;cubes.push([px,pz,base+h,o.i,false,1,o.part===2,false,false,(o.r||0)+isoDir])});
+   const v=f.cells[o.y]?.[o.x],b2=f.base?.[o.y]?.[o.x]||0;
+   const top=v!=null?b2+(f.hts[o.y][o.x]||1):0;
+   faces+=3;boxes.push({x:o.x,z:o.y,y:fb+top,mi:o.i,kind:1,thin:1,hx:0,hz:0,ht:0,rot:o.r||0,foot:o.part===2});});
   f.rs?.forEach((row,z)=>row.forEach((r,x)=>{
    if(!r||!RS[r.i])return;
-   const v=f.cells[z]?.[x],h=v!=null?((f.base?.[z]?.[x]||0)+(f.hts[z][x]||1)):0;
-   const[px,pz]=rotXZ(x,z);faces+=3;
-   cubes.push([px,pz,base+h,r.i,false,2,false,false,false,(r.r||0)+isoDir])}));
+   const v=f.cells[z]?.[x],b2=f.base?.[z]?.[x]||0;
+   const top=v!=null?b2+(f.hts[z][x]||1):0;
+   faces+=3;boxes.push({x,z,y:fb+top,mi:r.i,kind:2,thin:RS_THICK[RS[r.i][0]]??1,hx:0,hz:0,ht:0,rot:r.r||0});}));
  });
- cubes.sort((a,b)=>(a[0]+a[1]+a[2])-(b[0]+b[1]+b[2]));
- const textured=isoTextured&&faces<=30000;
+ boxes.sort((a,b)=>near(a.x,a.y,a.z)-near(b.x,b.y,b.z));
+
+ // texturing every face while the camera is being dragged would stutter on a
+ // big build, so drop to flat fills mid-drag and restore on release
+ const budget=isoDragging?6000:30000;
+ const textured=isoTextured&&faces<=budget;
  g.imageSmoothingEnabled=true;
- cubes.forEach(([x,z,y,mi,hideT,kind,foot,hideL,hideR,rot])=>{
-  const X=ox+(x-z)*s,Y=oy+(x+z)*s*.5-y*s;
-  if(kind===2){
-   const p=RS[mi],sp=textured?rsSprite(mi):null,col=p?.[1]||"#c02a20";
-   // th = s gives a full cube; a thin part keeps its bottom on the block below
-   const th=Math.max(1.2,s*(RS_THICK[p?.[0]]??1)),Yt=Y+s-th;
-   isoFace(g,sp, X-s,Yt, X,Yt+s*.5, X-s,Yt+th, .30, sp?null:shade(col,.72));
-   isoFace(g,sp, X,Yt+s*.5, X+s,Yt, X,Yt+s*.5+th, .48, sp?null:shade(col,.52));
-   isoTop(g,sp, X,Yt,s, rot, sp?null:col);
-   return;
+
+ const quad=(img,A,B,D,dark,flat)=>isoFace(g,img,A[0],A[1],B[0],B[1],D[0],D[1],dark,flat);
+ boxes.forEach(bx=>{
+  const{x,z,y,mi,kind}=bx;
+  const inset=kind===1?0.2:0;                       // furniture sits smaller
+  const x0=x+inset,x1=x+1-inset,z0=z+inset,z1=z+1-inset;
+  const t=kind===1?(1-inset*2):bx.thin;
+  const y0=y,y1=y+t;
+  const col=(kind===2?RS[mi]?.[1]:C[mi]?.[1])||"#888";
+  const img=textured?(kind===2?rsSprite(mi):kind===1?(objSprite(mi,!!bx.foot)||tile(mi)):faceArt(mi)):null;
+
+  if(!bx.hx){
+   const X=seePlusX?x1:x0;
+   const A=P(X,y1,seePlusX?z0:z1),B=P(X,y1,seePlusX?z1:z0),D=P(X,y0,seePlusX?z0:z1);
+   quad(img,A,B,D,.30,textured?null:shade(col,.72));
   }
-  const col=C[mi]?.[1]||"#888";
-  const hw=kind?s*.6:s;                                  // half-width of the diamond
-  const thk=kind?hw:Math.max(1.2,s*thinOf(mi));          // vertical extent
-  const Yo=kind?Y+(s-hw)*.5:Y+(s-thk);                   // thin blocks rest on the level below
-  const img=textured?(kind?(objSprite(mi,!!foot)||tile(mi)):faceArt(mi)):null;
-  if(!hideL)isoFace(g,img, X-hw,Yo, X,Yo+hw*.5, X-hw,Yo+thk, .30, textured?null:shade(col,.72));
-  if(!hideR)isoFace(g,img, X,Yo+hw*.5, X+hw,Yo, X,Yo+hw*.5+thk, .48, textured?null:shade(col,.52));
-  if(!hideT)isoTop(g,img, X,Yo,hw, kind===1?rot:0, textured?null:col);
+  if(!bx.hz){
+   const Z=seePlusZ?z1:z0;
+   const A=P(seePlusZ?x0:x1,y1,Z),B=P(seePlusZ?x1:x0,y1,Z),D=P(seePlusZ?x0:x1,y0,Z);
+   quad(img,A,B,D,.48,textured?null:shade(col,.52));
+  }
+  if(!bx.ht){
+   // corners of the top face in world order; the piece's own rotation picks
+   // which one the texture starts from, so orientation stays world-locked
+   const cs=[[x0,z0],[x1,z0],[x1,z1],[x0,z1]];
+   const k=(((bx.rot|0)%4)+4)%4;
+   const A=P(cs[k][0],y1,cs[k][1]),B=P(cs[(k+1)%4][0],y1,cs[(k+1)%4][1]),D=P(cs[(k+3)%4][0],y1,cs[(k+3)%4][1]);
+   quad(img,A,B,D,0,textured?null:col);
+  }
  });
+
  g.setTransform(1,0,0,1,0,0);
  g.fillStyle="#dbe5ee";g.font="bold 15px system-ui";g.fillText($("#name").value||"Untitled build",16,26);
  g.fillStyle="#91a2b4";g.font="12px system-ui";
  const which=isoFloor<0?`all ${F.length} floor${F.length>1?"s":""}`:`“${F[isoFloor].name}” only`;
- g.fillText(`${W} × ${H} blocks · ${which} · ${maxTop} blocks tall · ${cubes.length.toLocaleString()} blocks`
-  +(textured?"":" · flat shading (too big to texture)"),16,45);
- g.fillText("View "+["South-east","South-west","North-west","North-east"][isoDir],ic.width-130,26);
+ g.fillText(`${W} × ${H} blocks · ${which} · ${maxTop} blocks tall · ${boxes.length.toLocaleString()} blocks`
+  +(textured?"":(isoDragging?" · simplified while turning":" · flat shading (too big to texture)")),16,45);
+ g.fillText(`${compassName()} · tilt ${Math.round(isoPitch*DEG)}°`,ic.width-170,26);
+ g.fillStyle="#5d6b7a";g.font="11px system-ui";
+ g.fillText("drag to turn",ic.width-170,44);
 }
 
 /* ================= shopping list ================= */
@@ -2742,7 +2760,7 @@ function exportPNG(){
   g.fillStyle="#c8d2dc";g.fillText(n.length>20?n.slice(0,19)+"…":n,lx+17,ly);
   g.fillStyle="#8b98a7";g.textAlign="right";g.fillText(String(q),lx+legW-24,ly);g.textAlign="left";ly+=17});
  g.fillStyle="#6f7d8c";g.font="11px system-ui";
- g.fillText("Made with MinePlan V3.16",pad,out.height-10);
+ g.fillText("Made with MinePlan V3.17",pad,out.height-10);
  // north arrow
  g.save();g.translate(out.width-46,head+6);g.fillStyle="#9aa8b7";
  g.beginPath();g.moveTo(0,-2);g.lineTo(6,12);g.lineTo(0,8);g.lineTo(-6,12);g.closePath();g.fill();
@@ -2861,8 +2879,34 @@ $("#png").onclick=exportPNG;
 $("#mode").onclick=()=>{blueprint=!blueprint;$("#mode").textContent=blueprint?"Build View":"Blueprint";$("#mode").classList.toggle("active",blueprint);draw()};
 $("#preview3d").onclick=()=>{isoFloorOptions();previewDialog.showModal();isoRender()};
 $("#closePreview").onclick=()=>previewDialog.close();
-$("#isoRot").onclick=()=>{isoDir=(isoDir+1)%4;isoRender()};
+$("#isoRot").onclick=()=>{isoYaw+=Math.PI/2;isoRender()};
+$("#isoReset").onclick=()=>{isoYaw=Math.PI/4;isoPitch=Math.atan(Math.SQRT1_2);isoRender()};
 $("#isoTex").onchange=e=>{isoTextured=e.target.checked;isoRender()};
+(function isoDragSetup(){
+ const cv=$("#iso");if(!cv)return;
+ cv.style.cursor="grab";cv.style.touchAction="none";
+ let last=null,pending=false;
+ const redraw=()=>{if(pending)return;pending=true;requestAnimationFrame(()=>{pending=false;isoRender()})};
+ cv.addEventListener("pointerdown",e=>{
+  e.preventDefault();cv.setPointerCapture(e.pointerId);
+  last={x:e.clientX,y:e.clientY};isoDragging=true;cv.style.cursor="grabbing";
+ });
+ cv.addEventListener("pointermove",e=>{
+  if(!last)return;
+  const dx=e.clientX-last.x,dy=e.clientY-last.y;last={x:e.clientX,y:e.clientY};
+  isoYaw-=dx*0.011;
+  // keep the camera above the build and short of straight down
+  isoPitch=clamp(isoPitch-dy*0.009,0.12,1.5);
+  redraw();
+ });
+ const stop=e=>{
+  if(!last)return;last=null;isoDragging=false;cv.style.cursor="grab";
+  isoRender();                       // full-quality pass once the drag ends
+ };
+ cv.addEventListener("pointerup",stop);
+ cv.addEventListener("pointercancel",stop);
+ cv.addEventListener("dblclick",()=>{isoYaw=Math.PI/4;isoPitch=Math.atan(Math.SQRT1_2);isoRender()});
+})();
 $("#isoFloorSel").onchange=e=>{isoFloor=+e.target.value;isoRender()};
 $("#isoSpread").onchange=e=>{isoSpread=e.target.checked;isoRender()};
 $("#isoPng").onclick=()=>{const a=document.createElement("a");
@@ -2925,6 +2969,8 @@ document.addEventListener("visibilitychange",()=>{if(document.hidden&&dirty)back
 
 /* ================= what's new, shown once per version ================= */
 const NOTES={
+ "3.17":["Drag the 3D preview to turn it \u2014 any angle, not just four fixed views. Up and down tilts the camera.",
+        "Double-click the picture, or hit Reset view, to go back to the classic angle."],
  "3.16":["New Lift tool: raise a block off the ground for balconies, arches, bridges and hanging lights. Left-click lifts, right-click drops.",
         "Blocks now start at their real height \u2014 pick a door and it is 2 tall automatically.",
         "Slabs, carpets and trapdoors render at their real thickness in 3D instead of as full cubes.",
